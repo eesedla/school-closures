@@ -51,20 +51,17 @@
   .photo img { display: block; width: 100%; height: auto; }
   .photo.is-visible { opacity: 1; transform: none; }
 
-  /* Positioned against the stage now, not the viewport. Each width takes the
-     smallest of a height-based size, a hard cap, and a share of the stage width,
-     so the three never collide however the stage is shaped. 1 hangs top-left and
-     3 bottom-left; 2 is held to the right so none of them covers the school at
-     the centre of the circle. aspect-ratio is each file's real ratio. */
-  #photo-1 { aspect-ratio: 2048 / 2560;                  /* portrait 4:5 */
-             width: min(22vh, 230px, 28%);
-             top: 1.5vh; left: 1.5vh; }
-  #photo-2 { aspect-ratio: 2560 / 1703;                  /* landscape 3:2 — the big one */
-             width: min(30vh, 320px, 36%);
-             top: 36%; right: 1.5vh; }
-  #photo-3 { aspect-ratio: 1703 / 2560;                  /* portrait 2:3 */
-             width: min(20vh, 210px, 26%);
-             bottom: 1.5vh; left: 1.5vh; }
+  /* Positioned against the stage, not the viewport. Each width takes the smallest
+     of a height-based size, a hard cap, and a share of the stage width, so the two
+     never collide however the stage is shaped. 1 sits top-right and 2 bottom-left:
+     opposite corners, so they clear each other on both axes, and neither reaches
+     the school at the centre of the circle. aspect-ratio is each file's real ratio. */
+  #photo-1 { aspect-ratio: 2560 / 1703;                  /* landscape 3:2 */
+             width: min(46vh, 480px, 54%);
+             top: 2vh; right: 2vh; }
+  #photo-2 { aspect-ratio: 1703 / 2560;                  /* portrait 2:3 */
+             width: min(34vh, 360px, 38%);
+             bottom: 2vh; left: 2vh; }
 
   /* The 16 closed schools. Screen-fixed squares, so they keep their size at any
      zoom. MapLibre writes `transform` on the marker element itself, so the square
@@ -118,12 +115,11 @@
     .para { margin-bottom: 62vh; max-width: none; }
     .entry-title { font-size: clamp(30px, 8vw, 42px); }
 
-    /* The stage is short and barely wider than the circle here, so size the
-       photos off the stage's own height and keep all three clear of the middle
-       band where the school sits: 1 along the top, 2 and 3 along the bottom. */
-    #photo-1 { width: auto; height: 36%; top: 2%;   bottom: auto; left: 3%;   right: auto; }
-    #photo-2 { width: auto; height: 28%; top: auto; bottom: 2%;   left: auto;  right: 3%;  }
-    #photo-3 { width: auto; height: 36%; top: auto; bottom: 2%;   left: 3%;   right: auto; }
+    /* The stage is short and barely wider than the circle here, so size the photos
+       off the stage's own height and keep both clear of the middle band where the
+       school sits: 1 along the top, 2 along the bottom. */
+    #photo-1 { width: auto; height: 34%; top: 2%;   bottom: auto; left: auto; right: 3%;  }
+    #photo-2 { width: auto; height: 44%; top: auto; bottom: 2%;   left: 3%;   right: auto; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -146,14 +142,12 @@
              alt="" loading="eager" decoding="async">
       </figure>
 
+      <!-- MSI_3112 is the opener above, so it is deliberately not repeated here. -->
       <div class="photos" aria-hidden="true">
         <figure class="photo" id="photo-1">
-          <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3112-scaled.jpg" alt="" loading="eager" decoding="async">
-        </figure>
-        <figure class="photo" id="photo-2">
           <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7004-scaled.jpg" alt="" loading="eager" decoding="async">
         </figure>
-        <figure class="photo" id="photo-3">
+        <figure class="photo" id="photo-2">
           <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7782-scaled.jpg" alt="" loading="eager" decoding="async">
         </figure>
       </div>
@@ -177,9 +171,9 @@
       </div>
     </header>
 
-    <p class="cue para" data-photos="2" data-mask="circle" data-view="close" data-squares="off">The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
+    <p class="cue para" data-photos="1" data-mask="circle" data-view="close" data-squares="off">The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
 
-    <p class="cue para" data-photos="3" data-mask="circle" data-view="close" data-squares="off">Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
+    <p class="cue para" data-photos="2" data-mask="circle" data-view="close" data-squares="off">Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
 
     <p class="cue para pivot-lead" data-photos="0" data-mask="city" data-view="close" data-squares="off">Fulton isn’t unique.</p>
 
