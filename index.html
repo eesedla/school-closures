@@ -18,17 +18,32 @@
     --gray:   #879599;
     --cream:  #f4f0e6;
     --border: #ccd8db;
-    --navy:   #1a1b2e;   /* the mask colour; body matches so overscroll never flashes */
+    --navy:   #1a1b2e;   /* the mask colour, and the stage behind the map */
     --card-shadow: 0 20px 50px rgba(0,0,0,.4);
   }
 
-  body { margin: 0; background: var(--navy);
+  body { margin: 0; background: #fff;
          font-family: var(--font-body); color: var(--slate); }
 
-  #map { position: sticky; top: 0; height: 100vh; width: 100%; }
+  /* ---- two-track layout: sticky visual left, scrolling copy right ---- */
+  .piece { display: grid; grid-template-columns: 55% 45%; }
 
-  /* ---- photos: fixed overlay, arranged around the circle at screen centre ---- */
-  .photos { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+  .stage-col { position: sticky; top: 0; height: 100vh;
+               align-self: start;       /* sticky in a grid wants an explicit start */
+               z-index: 2;              /* copy scrolls behind the stage, not over it */
+               background: var(--navy); }
+  .stage     { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  #map       { position: absolute; inset: 0; }
+
+  /* The opening photograph. It sits over the map and crossfades away once the
+     headline has scrolled past, which is what hands the stage to the map. */
+  .opener { position: absolute; inset: 0; margin: 0; z-index: 2;
+            transition: opacity 1s ease; }
+  .opener img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .opener.is-hidden { opacity: 0; }
+
+  /* ---- the three photographs that punctuate the close-up ---- */
+  .photos { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
   .photo  { position: absolute; margin: 0; padding: 0;
             box-shadow: var(--card-shadow);
             opacity: 0; transform: translateY(16px) scale(.97);
@@ -36,23 +51,20 @@
   .photo img { display: block; width: 100%; height: auto; }
   .photo.is-visible { opacity: 1; transform: none; }
 
-  /* Photos may cover the map, but never each other. 1 hangs from the top and 3 from
-     the bottom, so between them they clip only the circle's top and bottom caps and
-     leave the school itself (the middle ~140px of the circle) in the clear. 2 sits
-     off to the right of both. Widths are in vh because vertical space is what runs
-     out, not horizontal: 1 and 3 together claim ~78vh, leaving room at any height.
-     aspect-ratio is each file's real ratio, so boxes reserve height before load. */
-  #photo-1 { aspect-ratio: 2048 / 2560;                       /* portrait 4:5 */
-             width: min(31vh, 300px);
-             top: 3vh; left: calc(50% - 115px); }
-  #photo-2 { aspect-ratio: 2560 / 1703;                       /* landscape 3:2 — the big one */
-             width: min(46.6vh, calc(50vw - 290px), 440px);
-             top: calc(50% - 140px); left: calc(50% + 270px); }
-  #photo-3 { aspect-ratio: 1703 / 2560;                       /* portrait 2:3 */
-             width: min(26vh, 250px);
-             /* +2.5vh = half the width difference from #photo-1, so the two stay
-                centred on each other instead of looking 30px misaligned. */
-             bottom: 3vh; left: calc(50% - 160px + 2.5vh); }
+  /* Positioned against the stage now, not the viewport. Each width takes the
+     smallest of a height-based size, a hard cap, and a share of the stage width,
+     so the three never collide however the stage is shaped. 1 hangs top-left and
+     3 bottom-left; 2 is held to the right so none of them covers the school at
+     the centre of the circle. aspect-ratio is each file's real ratio. */
+  #photo-1 { aspect-ratio: 2048 / 2560;                  /* portrait 4:5 */
+             width: min(22vh, 230px, 28%);
+             top: 1.5vh; left: 1.5vh; }
+  #photo-2 { aspect-ratio: 2560 / 1703;                  /* landscape 3:2 — the big one */
+             width: min(30vh, 320px, 36%);
+             top: 36%; right: 1.5vh; }
+  #photo-3 { aspect-ratio: 1703 / 2560;                  /* portrait 2:3 */
+             width: min(20vh, 210px, 26%);
+             bottom: 1.5vh; left: 1.5vh; }
 
   /* The 16 closed schools. Screen-fixed squares, so they keep their size at any
      zoom. MapLibre writes `transform` on the marker element itself, so the square
@@ -66,80 +78,117 @@
   body.closures-on .closure-box { opacity: 1; transform: none;
                                   transition-delay: calc(var(--i) * 70ms); }
 
-  /* ---- scroll cards ---- */
-  .steps { position: relative; margin-top: -100vh; padding-top: 90vh;
-           pointer-events: none; z-index: 4; }
+  /* ---- the copy rail ---- */
+  .rail { padding: 0 6vw 0 5vw; position: relative; z-index: 1; }
 
-  /* Opaque and moving 1:1 with scroll, like real page content — not fade-ins.
-     Width is capped to clear the 145px-radius circle at screen centre:
-     5vw gutter + card must end left of (50vw - 145px), hence 45vw - 180px. */
-  .step { margin: 0 auto 95vh 5vw;
-          width: min(calc(45vw - 180px), 440px);
-          padding: 1.6rem 1.75rem;
-          background: #fff; color: var(--slate);
-          font-size: clamp(18px, 1.9vw, 21px); line-height: 1.75;
-          box-shadow: var(--card-shadow); }
-  .step p { margin: 0; }
-  .step p + p { margin-top: 1rem; }
-  .step h2 { font-family: var(--font-heading); font-weight: 700;
-             margin: 0 0 .5rem; line-height: 1.15;
-             font-size: clamp(24px, 2.6vw, 32px); }
-  /* Pivot line, after Signal's p.jw-pivot-lead: bigger than body copy. */
-  .step p.pivot-lead { font-family: var(--font-heading); font-weight: 700;
-                       font-size: clamp(26px, 3vw, 38px); line-height: 1.2; }
-  .step .eyebrow { font-family: var(--font-heading); font-weight: 700;
-                   text-transform: uppercase; letter-spacing: .06em;
-                   font-size: 13px; color: var(--gray); margin: 0 0 .5rem; }
+  .masthead { padding-top: 20vh; margin-bottom: 72vh; }
+  /* Byline markup mirrors the live site's .entry-meta / .byline / .author vcard
+     classes so the theme's own styles apply once embedded. When the parent
+     snippet exists it relays real postMeta and overrides this. */
+  .entry-title   { font-family: var(--font-heading); font-weight: 700;
+                   font-size: clamp(34px, 4.2vw, 58px); line-height: 1.05;
+                   margin: 0 0 .7rem; }
+  .entry-subhead { font-weight: 400; font-size: clamp(19px, 2vw, 24px);
+                   line-height: 1.4; margin: 0 0 1.8rem; }
+  .entry-meta    { display: flex; align-items: center; gap: .75rem;
+                   font-size: 15px; color: var(--gray); }
+  .entry-meta .avatar { display: block; width: 44px; height: 44px;
+                        border-radius: 50%; }
+  .entry-meta .author a { color: var(--teal); font-weight: 600;
+                          text-decoration: none; }
+  .entry-meta .author a:hover { text-decoration: underline; }
 
+  /* Paragraphs are opaque and move 1:1 with scroll, like real article copy —
+     the generous bottom margin is what makes each one arrive on its own. */
+  .para { font-size: clamp(18px, 1.9vw, 21px); line-height: 1.75;
+          max-width: 34em; margin: 0 0 75vh; }
+  .para:last-child { margin-bottom: 55vh; }
+  .pivot-lead { font-family: var(--font-heading); font-weight: 700;
+                font-size: clamp(26px, 3vw, 38px); line-height: 1.2; }
+  .eyebrow { font-family: var(--font-heading); font-weight: 700;
+             text-transform: uppercase; letter-spacing: .06em;
+             font-size: 13px; color: var(--gray); margin: 0 0 .5rem; }
+
+  /* ---- one column: visual pinned to the top, copy running under it ---- */
   @media (max-width: 900px) {
-    .step  { margin-left: auto; margin-right: auto; width: 86vw; padding: 1.25rem 1.4rem; }
-    #photo-1 { width: 44vw; top: 4vh;  bottom: auto; left: 4vw;  right: auto; }
-    #photo-2 { width: 70vw; top: auto; bottom: 18vh; left: 4vw;  right: auto; }
-    #photo-3 { width: 40vw; top: 4vh;  bottom: auto; left: auto; right: 4vw; }
+    .piece { grid-template-columns: 1fr; }
+    .stage-col { height: 58vh; }
+    .rail { padding: 0 7vw; }
+    .masthead { padding-top: 7vh; margin-bottom: 48vh; }
+    .para { margin-bottom: 62vh; max-width: none; }
+    .entry-title { font-size: clamp(30px, 8vw, 42px); }
+
+    /* The stage is short and barely wider than the circle here, so size the
+       photos off the stage's own height and keep all three clear of the middle
+       band where the school sits: 1 along the top, 2 and 3 along the bottom. */
+    #photo-1 { width: auto; height: 36%; top: 2%;   bottom: auto; left: 3%;   right: auto; }
+    #photo-2 { width: auto; height: 28%; top: auto; bottom: 2%;   left: auto;  right: 3%;  }
+    #photo-3 { width: auto; height: 36%; top: auto; bottom: 2%;   left: 3%;   right: auto; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .photo, .closure-box { transition: none; }
+    .photo, .closure-box, .opener { transition: none; }
     body.closures-on .closure-box { transition-delay: 0ms; }
   }
 </style>
 </head>
 <body>
 
-<div id="map"></div>
+<div class="piece">
 
-<div class="photos" aria-hidden="true">
-  <figure class="photo" id="photo-1">
-    <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3112-scaled.jpg" alt="" loading="eager" decoding="async">
-  </figure>
-  <figure class="photo" id="photo-2">
-    <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7004-scaled.jpg" alt="" loading="eager" decoding="async">
-  </figure>
-  <figure class="photo" id="photo-3">
-    <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7782-scaled.jpg" alt="" loading="eager" decoding="async">
-  </figure>
-</div>
+  <!-- LEFT TRACK: pinned visual. The opening photograph, then the map. -->
+  <div class="stage-col">
+    <div class="stage">
+      <div id="map"></div>
 
-<!-- Each card declares the state it wants, so scrolling back up reverses for free:
-     data-photos = how many photos show, data-mask = circle | city, data-view = close | city -->
-<div class="steps">
-  <div class="step" data-photos="2" data-mask="circle" data-view="close" data-squares="off">
-    <p>The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
+      <figure class="opener" id="opener">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3112-scaled.jpg"
+             alt="" loading="eager" decoding="async">
+      </figure>
+
+      <div class="photos" aria-hidden="true">
+        <figure class="photo" id="photo-1">
+          <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3112-scaled.jpg" alt="" loading="eager" decoding="async">
+        </figure>
+        <figure class="photo" id="photo-2">
+          <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7004-scaled.jpg" alt="" loading="eager" decoding="async">
+        </figure>
+        <figure class="photo" id="photo-3">
+          <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7782-scaled.jpg" alt="" loading="eager" decoding="async">
+        </figure>
+      </div>
+    </div>
   </div>
-  <div class="step" data-photos="3" data-mask="circle" data-view="close" data-squares="off">
-    <p>Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
-  </div>
-  <div class="step" data-photos="0" data-mask="city" data-view="close" data-squares="off">
-    <p class="pivot-lead">Fulton isn’t unique.</p>
-  </div>
-  <div class="step" data-photos="0" data-mask="city" data-view="city" data-squares="off">
-    <p>This summer — against the backdrop of the decision to shutter the largest number of schools in Cleveland's history — Signal Cleveland set out to learn how school closures ripple into nearby neighborhoods. We analyzed census data, knocked on doors and went to block club meetings. What we found is that in most places the closures, like Fulton’s chimney, cast long shadows.</p>
-  </div>
-  <div class="step" data-photos="0" data-mask="city" data-view="city" data-squares="on">
-    <p>We narrowed in on a wave of 16 school closures from 2010 and 2011. In census tracts where schools closed during that time population fell by an average of 17% over the next decade. At the same time, the population in areas without closures declined by only 0.5% during the same period. And even reuse of school buildings didn’t necessarily stem these declines.</p>
-  </div>
-  <div class="step" data-photos="0" data-mask="city" data-view="city" data-squares="on">
-    <p>These numbers can’t tell the whole story of what these schools meant, but the people who stayed can. We had conversations with over 30 neighbors who live around these schools — and in many cases attended them. They told us these schools functioned as civic institutions and sites of memory and that their closures affected their quality of life.</p>
+
+  <!-- RIGHT TRACK: the copy. Every .cue declares the state it wants, so scrolling
+       back up reverses for free: data-photos = how many photos show,
+       data-mask = circle | city, data-view = close | city, data-squares = on | off.
+       Leaving the headline behind is what crossfades the opener into the map. -->
+  <div class="rail">
+
+    <header class="cue masthead" data-photos="0" data-mask="circle" data-view="close" data-squares="off">
+      <h1 class="entry-title">How closing a school changes a community</h1>
+      <p class="entry-subhead">Old buildings, faded bricks and the fallout of a school closure</p>
+      <div class="entry-meta">
+        <span class="author-avatar"><img alt="Avatar photo" class="avatar avatar-80 photo" width="80" height="80"
+          src="https://signalcleveland.org/wp-content/uploads/2025/10/cropped-HeadShot-Street-Sense-Franzi-rotated-1-80x80.jpeg"
+          srcset="https://signalcleveland.org/wp-content/uploads/2025/10/cropped-HeadShot-Street-Sense-Franzi-rotated-1-160x160.jpeg 2x"></span>
+        <span class="byline"><span>by</span> <span class="author vcard"><a class="url fn n" href="https://signalcleveland.org/author/fwild/">Franziska Wild</a></span></span>
+      </div>
+    </header>
+
+    <p class="cue para" data-photos="2" data-mask="circle" data-view="close" data-squares="off">The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
+
+    <p class="cue para" data-photos="3" data-mask="circle" data-view="close" data-squares="off">Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
+
+    <p class="cue para pivot-lead" data-photos="0" data-mask="city" data-view="close" data-squares="off">Fulton isn’t unique.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="off">This summer — against the backdrop of the decision to shutter the largest number of schools in Cleveland's history — Signal Cleveland set out to learn how school closures ripple into nearby neighborhoods. We analyzed census data, knocked on doors and went to block club meetings. What we found is that in most places the closures, like Fulton’s chimney, cast long shadows.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on">We narrowed in on a wave of 16 school closures from 2010 and 2011. In census tracts where schools closed during that time population fell by an average of 17% over the next decade. At the same time, the population in areas without closures declined by only 0.5% during the same period. And even reuse of school buildings didn’t necessarily stem these declines.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on">These numbers can’t tell the whole story of what these schools meant, but the people who stayed can. We had conversations with over 30 neighbors who live around these schools — and in many cases attended them. They told us these schools functioned as civic institutions and sites of memory and that their closures affected their quality of life.</p>
+
   </div>
 </div>
 
@@ -415,6 +464,12 @@
     photoEls.forEach((el, i) => el.classList.toggle('is-visible', i < n));
   }
 
+  const openerEl = document.getElementById('opener');
+  // Showing the opener again on the way back up keeps the piece reversible.
+  function setOpener(show) {
+    openerEl.classList.toggle('is-hidden', !show);
+  }
+
   function applySquares(name) {
     if (name === curSquares) return;
     curSquares = name;
@@ -429,13 +484,11 @@
     }
   }
 
-  // Keep the whole cutout clear of the card column rather than hidden behind it.
-  // Mirrors the card's own width rule in the CSS above.
+  // The copy has its own column now, so the cutout just needs breathing room
+  // inside the stage rather than clearance from text laid over it.
   function cityPadding() {
-    const vw = window.innerWidth;
-    if (vw <= 900) return { top: 40, right: 20, bottom: 200, left: 20 };
-    const cardRight = 0.05 * vw + Math.min(0.45 * vw - 180, 440);
-    return { top: 50, right: 50, bottom: 50, left: cardRight + 50 };
+    const pad = window.innerWidth <= 900 ? 24 : 48;
+    return { top: pad, right: pad, bottom: pad, left: pad };
   }
 
   function applyView(name) {
@@ -449,10 +502,12 @@
     }
   }
 
-  const steps = [...document.querySelectorAll('.step')];
+  const cues = [...document.querySelectorAll('.cue')];
+  const masthead = cues[0];
+  const firstPara = cues[1];
 
   scrollama()
-    .setup({ step: '.step', offset: 0.6 })
+    .setup({ step: '.cue', offset: 0.6 })
     .onStepEnter(({ element }) => {
       const d = element.dataset;
       if (d.photos !== undefined) setPhotos(+d.photos);
@@ -461,8 +516,12 @@
       if (d.squares) applySquares(d.squares);
     })
     .onStepExit(({ element, direction }) => {
-      // Scrolling back up above the first card clears the photos again.
-      if (direction === 'up' && element === steps[0]) setPhotos(0);
+      // Leaving the headline behind is the cue to hand the stage to the map.
+      // It fires on exit, not on the next paragraph's entry, so the crossfade
+      // finishes in the gap below the masthead before the photos start arriving.
+      if (element === masthead) setOpener(direction === 'up');
+      // Scrolling back up above the first paragraph clears the photos again.
+      if (direction === 'up' && element === firstPara) setPhotos(0);
     });
 
   window.addEventListener('resize', () => {
