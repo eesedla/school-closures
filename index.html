@@ -516,13 +516,20 @@
       if (d.squares) applySquares(d.squares);
     })
     .onStepExit(({ element, direction }) => {
-      // Leaving the headline behind is the cue to hand the stage to the map.
-      // It fires on exit, not on the next paragraph's entry, so the crossfade
-      // finishes in the gap below the masthead before the photos start arriving.
-      if (element === masthead) setOpener(direction === 'up');
       // Scrolling back up above the first paragraph clears the photos again.
       if (direction === 'up' && element === firstPara) setPhotos(0);
     });
+
+  // Hand the stage to the map once the headline has scrolled away. This is its
+  // own observer rather than a scrollama cue: the masthead's box ends around
+  // 370px while the cue line sits at 60% of the viewport, so it never becomes
+  // the active step and so never fires an enter or an exit to hang this on.
+  // The -25% top margin pulls the trigger up to a quarter of the way down the
+  // screen, which puts the crossfade well clear of the first paragraph's photos.
+  new IntersectionObserver(
+    ([entry]) => setOpener(entry.isIntersecting),
+    { threshold: 0, rootMargin: '-25% 0px 0px 0px' }
+  ).observe(masthead);
 
   window.addEventListener('resize', () => {
     map.resize();
