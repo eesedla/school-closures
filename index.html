@@ -102,6 +102,18 @@
   .para { font-size: clamp(18px, 1.9vw, 21px); line-height: 1.75;
           max-width: 34em; margin: 0 0 75vh; }
   .para:last-child { margin-bottom: 55vh; }
+
+  /* From the narrative section on, the copy reads as an article rather than as a
+     run of isolated cues, so the gap between paragraphs drops sharply. The
+     exception is a paragraph that hands the stage to a new plate: that one keeps
+     room above it so its crossfade lands before the next cue asks for another.
+     .turn is applied in script by comparing each cue's plate with the one before,
+     so adding a paragraph or a plate needs no bookkeeping here. */
+  .section-head ~ .para      { margin-bottom: 18vh; }
+  .section-head ~ .para.turn { margin-top: 46vh; }
+  /* Equal specificity to the rule above and declared later, so the piece keeps
+     its tail rather than ending 18vh after the last line. */
+  .section-head ~ .para:last-child { margin-bottom: 55vh; }
   /* Section subhead, after Signal's p.jw-item-sub: condensed bold, and it sits
      tight above its own copy rather than taking a full scroll gap. */
   .section-head { font-family: var(--font-heading); font-weight: 700;
@@ -230,6 +242,12 @@
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">He’s spent the last six years advocating for answers about the school. That means attending city council meetings, writing to the mayor and being interviewed by the TV news. He even launched a city council campaign in 2024 with the hope it might nudge some action on the school.</p>
 
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">Watching Fulton deteriorate bothers Walker. He knows it’s a drag on the neighborhood’s property values. But it also goes deeper than that, for him the school is also a symbol of how his community has been neglected.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">“It’s frustration that nobody seems to do anything about it,” he said. “It’s anger that I’m being ignored. That whomever the powers may be doesn’t value our community enough to do anything about it.”</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">Over the years, since Fulton closed, Walker and the McMichael’s have watched the blocks around the school change. From 2010 to 2024 the census tract containing the school — an Oklahoma shaped area bordered by Milverton Rd. and Kinsman Ave on the north and south sides and by East 140th and East 149th on the west and east sides — lost a third of its residents.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">They believe that closure of the school had “absolutely” something to do with that decline. At one point this winter, Walker called a senior neighbor of his to check up on her only to learn she’d moved away, a decision she blamed on crime and Fulton’s closure.</p>
 
   </div>
 </div>
@@ -566,6 +584,15 @@
   const cues = [...document.querySelectorAll('.cue')];
   const masthead = cues[0];
   const firstPara = cues[1];
+
+  // Mark the cues that change what is on the stage; the CSS gives those extra
+  // room above so a crossfade is not cut short by the next one.
+  cues.forEach((el, i) => {
+    const prev = cues[i - 1];
+    if (prev && el.dataset.plate && prev.dataset.plate !== el.dataset.plate) {
+      el.classList.add('turn');
+    }
+  });
 
   scrollama()
     .setup({ step: '.cue', offset: 0.6 })
