@@ -39,6 +39,8 @@
   /* Full-stage layers over the map: the opening photograph, the clip, the still
      that follows it. Exactly one shows at a time, or none, which leaves the map
      itself as the view. Every crossfade in the piece is just this transition. */
+  /* z-index 2 is the resting level; the incoming plate is raised to 3 in script
+     so it can fade in over the outgoing one instead of alongside it. */
   .plate { position: absolute; inset: 0; margin: 0; z-index: 2;
            opacity: 0; transition: opacity 1s ease; pointer-events: none; }
   .plate.is-visible { opacity: 1; }
@@ -53,7 +55,7 @@
   .plate img[src*="MSI_6934"] { object-position: 22% center; }
 
   /* ---- the three photographs that punctuate the close-up ---- */
-  .photos { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .photos { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
   .photo  { position: absolute; margin: 0; padding: 0;
             box-shadow: var(--card-shadow);
             opacity: 0; transform: translateY(16px) scale(.97);
@@ -90,7 +92,7 @@
   /* Legend. Tied to the map being the visible plate as well as to the squares,
      so it cannot strand itself on top of a photograph: the narrative sections
      leave the squares switched on underneath their plates. */
-  .legend { position: absolute; left: 2vh; bottom: 2vh; z-index: 4;
+  .legend { position: absolute; left: 2vh; bottom: 2vh; z-index: 7;
             opacity: 0; transition: opacity .5s ease; pointer-events: none; }
   body.on-map.closures-on .legend { opacity: 1; }
   .legend-row { display: flex; align-items: center; gap: .55rem; margin: 0 0 .5rem;
@@ -626,10 +628,35 @@
   const clipHasFootage =
     !(clipVideo.querySelector('source')?.getAttribute('src') || '').includes('REPLACE_');
 
+  // Must outlast the .plate opacity transition, or the outgoing plate is dropped
+  // while the incoming one is still translucent.
+  const PLATE_FADE_MS = reduceMotion ? 0 : 1120;
+  let plateCleanup;
+
   function applyPlate(name) {
     if (name === curPlate) return;
     curPlate = name;
-    for (const key in PLATES) PLATES[key].classList.toggle('is-visible', key === name);
+    const incoming = PLATES[name];      // undefined for 'map', which is no plate
+    clearTimeout(plateCleanup);
+
+    if (incoming) {
+      // Fading both plates at once leaves the map showing through the middle of
+      // the dissolve — at the halfway point each is at .5, which together cover
+      // only 75%. So the incoming plate is raised above the outgoing one and
+      // fades in against it while it is still fully opaque, and the outgoing one
+      // is not dropped until that has finished.
+      for (const key in PLATES) PLATES[key].style.zIndex = (key === name) ? 3 : 2;
+      incoming.classList.add('is-visible');
+      plateCleanup = setTimeout(() => {
+        for (const key in PLATES) {
+          if (key !== curPlate) PLATES[key].classList.remove('is-visible');
+        }
+      }, PLATE_FADE_MS);
+    } else {
+      // Going to the map, where showing it through is the whole point.
+      for (const key in PLATES) PLATES[key].classList.remove('is-visible');
+    }
+
     // The legend belongs to the map, so it hides whenever a plate covers it.
     document.body.classList.toggle('on-map', name === 'map');
     // Nothing to play until the clips land, and a looping clip is exactly what
