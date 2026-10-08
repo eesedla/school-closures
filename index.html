@@ -79,11 +79,30 @@
      --i staggers them in one after another. */
   .closure     { width: 11px; height: 11px; pointer-events: none; }
   .closure-box { display: block; width: 100%; height: 100%;
-                 background: var(--yellow);
                  opacity: 0; transform: scale(.4);
                  transition: opacity .45s ease, transform .45s ease; }
-  body.closures-on .closure-box { opacity: 1; transform: none;
-                                  transition-delay: calc(var(--i) * 70ms); }
+  .closure-box--old { background: var(--yellow); }
+  .closure-box--new { background: var(--red); }
+  body.closures-on     .closure-box--old,
+  body.closures-new-on .closure-box--new { opacity: 1; transform: none;
+                                           transition-delay: calc(var(--i) * 70ms); }
+
+  /* Legend. Tied to the map being the visible plate as well as to the squares,
+     so it cannot strand itself on top of a photograph: the narrative sections
+     leave the squares switched on underneath their plates. */
+  .legend { position: absolute; left: 2vh; bottom: 2vh; z-index: 4;
+            opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+  body.on-map.closures-on .legend { opacity: 1; }
+  .legend-row { display: flex; align-items: center; gap: .55rem; margin: 0 0 .5rem;
+                font-size: 14px; line-height: 1.2; color: #fff;
+                text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  .legend-row:last-child { margin-bottom: 0; }
+  .legend-swatch { display: block; width: 12px; height: 12px; flex: none; }
+  .legend-row--old .legend-swatch { background: var(--yellow); }
+  .legend-row--new .legend-swatch { background: var(--red); }
+  /* The second entry waits for the squares it describes. */
+  .legend-row--new { opacity: 0; transition: opacity .5s ease; }
+  body.closures-new-on .legend-row--new { opacity: 1; }
 
   /* ---- the copy rail ---- */
   .rail { padding: 0 6vw 0 5vw; position: relative; z-index: 1; }
@@ -207,6 +226,11 @@
       </figure>
 
       <!-- MSI_3112 is the opener above, so it is deliberately not repeated here. -->
+      <div class="legend" id="legend" aria-hidden="true">
+        <p class="legend-row legend-row--old"><span class="legend-swatch"></span>Closed 2010–11</p>
+        <p class="legend-row legend-row--new"><span class="legend-swatch"></span>Closed 2026</p>
+      </div>
+
       <div class="photos" aria-hidden="true">
         <figure class="photo" id="photo-1">
           <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7004-scaled.jpg" alt="" loading="eager" decoding="async">
@@ -289,6 +313,12 @@
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">At this point, Fulton’s neighbors just want the building torn down. They’re sick and tired of reporting break-ins, illegal dumping and people setting off fireworks on the Fourth of July. They’re also worried that at some point they’ll have to call about something more serious than a mound of old tires or someone coming to steal the wrought iron fence piece by piece.</p>
 
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">“They need to tear it down,” Kisha said. “It just makes the neighborhood look horrible.”</p>
+
+    <h2 class="cue section-head" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-plate="map">Fulton isn’t unique</h2>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-plate="map">The district shuttered 18 school buildings this year. District officials were adamant the cause was fewer kids — a result of population and birthrate declines. They made the case that without closures CMSD can’t offer students the educational opportunities they deserve.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-plate="map">In response, community leaders warned that closing schools would only push more families from their neighborhoods. Current forecasts predict, a decade from now, the district will have lost an eighth of its current students.</p>
 
   </div>
 </div>
@@ -551,14 +581,30 @@
     map.setPaintProperty('mask-circle', 'fill-opacity', curMask === 'circle' ? 1 : 0);
   });
 
+  // The 18 buildings shuttered this year, as [lng, lat]. The source rows were
+  // lat,lng, the opposite order to the 2010-11 list above, and are flipped here.
+  const CLOSURES_2026 = [
+    [-81.550966,41.454771], [-81.591324,41.463061], [-81.704977,41.43543],
+    [-81.647514,41.490546], [-81.553313,41.553689], [-81.552414,41.569458],
+    [-81.763936,41.454285], [-81.630011,41.508236], [-81.599326,41.444643],
+    [-81.816827,41.44134],  [-81.582331,41.545494], [-81.624276,41.529275],
+    [-81.769943,41.448081], [-81.619091,41.494562], [-81.756794,41.482524],
+    [-81.6524,41.493664],   [-81.686779,41.478717], [-81.576742,41.552865]
+  ];
+
   // Markers go in once and stay; CSS decides whether they are visible.
-  CLOSURES.forEach(([lng, lat], i) => {
-    const el = document.createElement('div');
-    el.className = 'closure';
-    el.style.setProperty('--i', i);
-    el.appendChild(Object.assign(document.createElement('span'), { className: 'closure-box' }));
-    new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
-  });
+  function addClosureMarkers(list, variant) {
+    list.forEach(([lng, lat], i) => {
+      const el = document.createElement('div');
+      el.className = 'closure';
+      el.style.setProperty('--i', i);                // drives the stagger in CSS
+      el.appendChild(Object.assign(document.createElement('span'),
+        { className: 'closure-box closure-box--' + variant }));
+      new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+    });
+  }
+  addClosureMarkers(CLOSURES, 'old');
+  addClosureMarkers(CLOSURES_2026, 'new');
 
   const photoEls = [...document.querySelectorAll('.photo')];
   // Show the first `n` photos; the rest fade out.
@@ -584,6 +630,8 @@
     if (name === curPlate) return;
     curPlate = name;
     for (const key in PLATES) PLATES[key].classList.toggle('is-visible', key === name);
+    // The legend belongs to the map, so it hides whenever a plate covers it.
+    document.body.classList.toggle('on-map', name === 'map');
     // Nothing to play until the clips land, and a looping clip is exactly what
     // reduced motion asks us not to start; the poster covers both cases.
     if (!clipHasFootage || reduceMotion) return;
@@ -591,10 +639,12 @@
     else { clipVideo.pause(); clipVideo.currentTime = 0; }
   }
 
+  // off = none, on = the 2010-11 wave, both = that wave plus this year's.
   function applySquares(name) {
     if (name === curSquares) return;
     curSquares = name;
-    document.body.classList.toggle('closures-on', name === 'on');
+    document.body.classList.toggle('closures-on', name === 'on' || name === 'both');
+    document.body.classList.toggle('closures-new-on', name === 'both');
   }
 
   function applyMask(name) {
