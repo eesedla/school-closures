@@ -42,6 +42,14 @@
   .opener img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .opener.is-hidden { opacity: 0; }
 
+  /* Stand-in video for the photographer's clips. Same crossfade mechanism as the
+     opener, but fading IN over the map rather than out of the way. The poster
+     keeps the section readable until the real footage lands. */
+  .clip { position: absolute; inset: 0; margin: 0; z-index: 2;
+          opacity: 0; transition: opacity 1s ease; }
+  .clip video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .clip.is-visible { opacity: 1; }
+
   /* ---- the three photographs that punctuate the close-up ---- */
   .photos { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
   .photo  { position: absolute; margin: 0; padding: 0;
@@ -100,6 +108,11 @@
   .para { font-size: clamp(18px, 1.9vw, 21px); line-height: 1.75;
           max-width: 34em; margin: 0 0 75vh; }
   .para:last-child { margin-bottom: 55vh; }
+  /* Section subhead, after Signal's p.jw-item-sub: condensed bold, and it sits
+     tight above its own copy rather than taking a full scroll gap. */
+  .section-head { font-family: var(--font-heading); font-weight: 700;
+                  font-size: clamp(24px, 2.6vw, 34px); line-height: 1.15;
+                  margin: 0 0 1.3rem; }
   .pivot-lead { font-family: var(--font-heading); font-weight: 700;
                 font-size: clamp(26px, 3vw, 38px); line-height: 1.2; }
   .eyebrow { font-family: var(--font-heading); font-weight: 700;
@@ -142,6 +155,16 @@
              alt="" loading="eager" decoding="async">
       </figure>
 
+      <!-- Stand-in for the photographer's clips around the school. Drop the real
+           file into the <source> below; REPLACE_ must not survive to publication.
+           Until then the poster carries the section. -->
+      <figure class="clip" id="clip" aria-hidden="true">
+        <video muted loop playsinline preload="none"
+               poster="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7004-scaled.jpg">
+          <source src="REPLACE_FULTON_CLIP.mp4" type="video/mp4">
+        </video>
+      </figure>
+
       <!-- MSI_3112 is the opener above, so it is deliberately not repeated here. -->
       <div class="photos" aria-hidden="true">
         <figure class="photo" id="photo-1">
@@ -160,7 +183,7 @@
        Leaving the headline behind is what crossfades the opener into the map. -->
   <div class="rail">
 
-    <header class="cue masthead" data-photos="0" data-mask="circle" data-view="close" data-squares="off">
+    <header class="cue masthead" data-photos="0" data-mask="circle" data-view="close" data-squares="off" data-clip="off">
       <h1 class="entry-title">How closing a school changes a community</h1>
       <p class="entry-subhead">Old buildings, faded bricks and the fallout of a school closure</p>
       <div class="entry-meta">
@@ -171,17 +194,27 @@
       </div>
     </header>
 
-    <p class="cue para" data-photos="1" data-mask="circle" data-view="close" data-squares="off">The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
+    <p class="cue para" data-photos="1" data-mask="circle" data-view="close" data-squares="off" data-clip="off">The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
 
-    <p class="cue para" data-photos="2" data-mask="circle" data-view="close" data-squares="off">Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
+    <p class="cue para" data-photos="2" data-mask="circle" data-view="close" data-squares="off" data-clip="off">Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
 
-    <p class="cue para pivot-lead" data-photos="0" data-mask="city" data-view="close" data-squares="off">Fulton isn’t unique.</p>
+    <p class="cue para pivot-lead" data-photos="0" data-mask="city" data-view="close" data-squares="off" data-clip="off">Fulton isn’t unique.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="off">This summer — against the backdrop of the decision to shutter the largest number of schools in Cleveland's history — Signal Cleveland set out to learn how school closures ripple into nearby neighborhoods. We analyzed census data, knocked on doors and went to block club meetings. What we found is that in most places the closures, like Fulton’s chimney, cast long shadows.</p>
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="off" data-clip="off">This summer — against the backdrop of the decision to shutter the largest number of schools in Cleveland's history — Signal Cleveland set out to learn how school closures ripple into nearby neighborhoods. We analyzed census data, knocked on doors and went to block club meetings. What we found is that in most places the closures, like Fulton’s chimney, cast long shadows.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on">We narrowed in on a wave of 16 school closures from 2010 and 2011. In census tracts where schools closed during that time population fell by an average of 17% over the next decade. At the same time, the population in areas without closures declined by only 0.5% during the same period. And even reuse of school buildings didn’t necessarily stem these declines.</p>
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-clip="off">We narrowed in on a wave of 16 school closures from 2010 and 2011. In census tracts where schools closed during that time population fell by an average of 17% over the next decade. At the same time, the population in areas without closures declined by only 0.5% during the same period. And even reuse of school buildings didn’t necessarily stem these declines.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on">These numbers can’t tell the whole story of what these schools meant, but the people who stayed can. We had conversations with over 30 neighbors who live around these schools — and in many cases attended them. They told us these schools functioned as civic institutions and sites of memory and that their closures affected their quality of life.</p>
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-clip="off">These numbers can’t tell the whole story of what these schools meant, but the people who stayed can. We had conversations with over 30 neighbors who live around these schools — and in many cases attended them. They told us these schools functioned as civic institutions and sites of memory and that their closures affected their quality of life.</p>
+
+    <!-- Every cue in this section asks for the clip, so the crossfade still happens
+         even if the short heading is scrolled past too fast to register. -->
+    <h2 class="cue section-head" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-clip="on">Life across from an abandoned school</h2>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-clip="on">Kisha and Harris McMichael’s home sits face to face with Fulton.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-clip="on">Kisha, who grew up in the home and attended the school, can't help but think fondly of how it used to be. She remembers its playground filled with kids and a report she wrote on the school's namesake, Robert Fulton, who invented the steamship. Now, its carcass is a source of bitterness to the point Kisha’s voice strains and catches a bit while discussing it.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-clip="on">“But, far as the school, it's just disappointing,” she said. “You know, Robert Fulton was a good school.”</p>
 
   </div>
 </div>
@@ -414,6 +447,7 @@
   let curMask = 'circle';
   let curView = 'close';
   let curSquares = 'off';
+  let curClip = 'off';
 
   map.on('load', () => {
     // Base mask: navy everywhere except inside the city limits. It never changes —
@@ -464,6 +498,24 @@
     openerEl.classList.toggle('is-hidden', !show);
   }
 
+  const clipEl = document.getElementById('clip');
+  const clipVideo = clipEl.querySelector('video');
+  // True only once a real file has replaced the placeholder source.
+  const clipHasFootage =
+    !(clipVideo.querySelector('source')?.getAttribute('src') || '').includes('REPLACE_');
+
+  function applyClip(name) {
+    if (name === curClip) return;
+    curClip = name;
+    const on = name === 'on';
+    clipEl.classList.toggle('is-visible', on);
+    // Nothing to play until the clips land, and a looping clip is exactly what
+    // reduced motion asks us not to start; the poster covers both cases.
+    if (!clipHasFootage || reduceMotion) return;
+    if (on) clipVideo.play().catch(() => {});   // autoplay can still be refused
+    else { clipVideo.pause(); clipVideo.currentTime = 0; }
+  }
+
   function applySquares(name) {
     if (name === curSquares) return;
     curSquares = name;
@@ -508,6 +560,7 @@
       if (d.mask) applyMask(d.mask);
       if (d.view) applyView(d.view);
       if (d.squares) applySquares(d.squares);
+      if (d.clip) applyClip(d.clip);
     })
     .onStepExit(({ element, direction }) => {
       // Scrolling back up above the first paragraph clears the photos again.
