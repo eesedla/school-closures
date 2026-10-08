@@ -121,6 +121,12 @@
                   margin: 0 0 1.3rem; }
   .pivot-lead { font-family: var(--font-heading); font-weight: 700;
                 font-size: clamp(26px, 3vw, 38px); line-height: 1.2; }
+  /* An image set into the copy column itself, as opposed to a .plate on the
+     stage. It takes the paragraph measure so its edges line up with the text,
+     and width/height on the <img> reserve its space before it loads. */
+  .rail-figure { margin: 0 0 18vh; max-width: 34em; }
+  .rail-figure img { display: block; width: 100%; height: auto; }
+
   /* Unfilled figure in the copy. Loud on purpose, in the spirit of the REPLACE_
      placeholders: it must not reach publication unnoticed. Delete the span when
      the number lands. */
@@ -262,6 +268,11 @@
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">Catherine Wright is that neighbor. She remembers the school changing the neighborhood greatly, in part because when Fulton closed, “the joy and laughter of children coming up and down the street” disappeared.</p>
 
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">“The police car was there, so the kids wouldn't get hurt,” she told Signal Cleveland. “We had a school crossing guard that was at the end of the street…kids were able to go to the store. It was actually really, really safe.”</p>
+
+    <figure class="rail-figure">
+      <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3214-scaled.jpg"
+           alt="" width="2560" height="1703" loading="lazy" decoding="async">
+    </figure>
 
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">Then there’s all the negative attention the empty school has attracted since it closed. People will routinely break into Fulton and dump trash including mattresses and pieces of furniture on the school grounds, Harris said. White also recalls watching birds of prey flying over the building in long, lazy circles presumably attracted by something, like a dead animal, decaying inside.</p>
 
