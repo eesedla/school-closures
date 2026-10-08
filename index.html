@@ -44,6 +44,14 @@
   .plate.is-visible { opacity: 1; }
   .plate img, .plate video { display: block; width: 100%; height: 100%; object-fit: cover; }
 
+  /* Per-photo crop, keyed on the filename the way the conventions key theirs on
+     data-bg, so it lapses if the photo is ever swapped rather than silently
+     mis-cropping its replacement. cover on this portrait-shaped stage throws
+     away 41% of a landscape frame's width (47% on a phone), and centred that
+     cuts Kisha out of her own picture. 22% holds both figures and their joined
+     hands; the cost is the school's entrance columns at the right edge. */
+  .plate img[src*="MSI_6934"] { object-position: 22% center; }
+
   /* ---- the three photographs that punctuate the close-up ---- */
   .photos { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
   .photo  { position: absolute; margin: 0; padding: 0;
@@ -194,7 +202,7 @@
       </figure>
 
       <figure class="plate" id="plate-wright">
-        <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_6952-scaled.jpg"
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_6934-scaled.jpg"
              alt="" loading="lazy" decoding="async">
       </figure>
 
