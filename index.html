@@ -165,6 +165,11 @@
              alt="" loading="lazy" decoding="async">
       </figure>
 
+      <figure class="plate" id="plate-walker">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_6970-scaled.jpg"
+             alt="" loading="lazy" decoding="async">
+      </figure>
+
       <!-- MSI_3112 is the opener above, so it is deliberately not repeated here. -->
       <div class="photos" aria-hidden="true">
         <figure class="photo" id="photo-1">
@@ -220,11 +225,11 @@
 
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="house">“Look over there,” Harris said, gesturing in the direction of the school. “It depreciates the value of our home, of everything.”</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="house">Down the block, Erick Walker, who like Kisha went to Fulton, has been trying to get answers about the school for a long time. The neat blue  home he lives in now has been in his family since he moved there with his mother and sister as a 12-year-old. He’s now in his late fifties.</p>
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">Down the block, Erick Walker, who like Kisha went to Fulton, has been trying to get answers about the school for a long time. The neat blue  home he lives in now has been in his family since he moved there with his mother and sister as a 12-year-old. He’s now in his late fifties.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="house">He’s spent the last six years advocating for answers about the school. That means attending city council meetings, writing to the mayor and being interviewed by the TV news. He even launched a city council campaign in 2024 with the hope it might nudge some action on the school.</p>
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">He’s spent the last six years advocating for answers about the school. That means attending city council meetings, writing to the mayor and being interviewed by the TV news. He even launched a city council campaign in 2024 with the hope it might nudge some action on the school.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="house">Watching Fulton deteriorate bothers Walker. He knows it’s a drag on the neighborhood’s property values. But it also goes deeper than that, for him the school is also a symbol of how his community has been neglected.</p>
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">Watching Fulton deteriorate bothers Walker. He knows it’s a drag on the neighborhood’s property values. But it also goes deeper than that, for him the school is also a symbol of how his community has been neglected.</p>
 
   </div>
 </div>
@@ -507,7 +512,8 @@
   const PLATES = {
     opener: document.getElementById('plate-opener'),
     clip:   document.getElementById('plate-clip'),
-    house:  document.getElementById('plate-house')
+    house:  document.getElementById('plate-house'),
+    walker: document.getElementById('plate-walker')
   };
   const clipVideo = PLATES.clip.querySelector('video');
   // True only once a real file has replaced the placeholder source.
