@@ -121,6 +121,11 @@
                   margin: 0 0 1.3rem; }
   .pivot-lead { font-family: var(--font-heading); font-weight: 700;
                 font-size: clamp(26px, 3vw, 38px); line-height: 1.2; }
+  /* Unfilled figure in the copy. Loud on purpose, in the spirit of the REPLACE_
+     placeholders: it must not reach publication unnoticed. Delete the span when
+     the number lands. */
+  .tk { background: var(--yellow); color: var(--slate);
+        padding: 0 .25em; border-radius: 2px; font-weight: 700; }
   .eyebrow { font-family: var(--font-heading); font-weight: 700;
              text-transform: uppercase; letter-spacing: .06em;
              font-size: 13px; color: var(--gray); margin: 0 0 .5rem; }
@@ -179,6 +184,11 @@
 
       <figure class="plate" id="plate-walker">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_6970-scaled.jpg"
+             alt="" loading="lazy" decoding="async">
+      </figure>
+
+      <figure class="plate" id="plate-wright">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_6952-scaled.jpg"
              alt="" loading="lazy" decoding="async">
       </figure>
 
@@ -248,6 +258,18 @@
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">Over the years, since Fulton closed, Walker and the McMichael’s have watched the blocks around the school change. From 2010 to 2024 the census tract containing the school — an Oklahoma shaped area bordered by Milverton Rd. and Kinsman Ave on the north and south sides and by East 140th and East 149th on the west and east sides — lost a third of its residents.</p>
 
     <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="walker">They believe that closure of the school had “absolutely” something to do with that decline. At one point this winter, Walker called a senior neighbor of his to check up on her only to learn she’d moved away, a decision she blamed on crime and Fulton’s closure.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">Catherine Wright is that neighbor. She remembers the school changing the neighborhood greatly, in part because when Fulton closed, “the joy and laughter of children coming up and down the street” disappeared.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">“The police car was there, so the kids wouldn't get hurt,” she told Signal Cleveland. “We had a school crossing guard that was at the end of the street…kids were able to go to the store. It was actually really, really safe.”</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">Then there’s all the negative attention the empty school has attracted since it closed. People will routinely break into Fulton and dump trash including mattresses and pieces of furniture on the school grounds, Harris said. White also recalls watching birds of prey flying over the building in long, lazy circles presumably attracted by something, like a dead animal, decaying inside.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">Since the city began publicly logging 311 calls in summer of 2017 there have been over <span class="tk">xx</span> calls for illegal dumping in a radius just a quarter mile out from Fulton. The feeling of deteriorating safety has gotten so bad to the point where Kisha no longer visits the corner store she used to love.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">At this point, Fulton’s neighbors just want the building torn down. They’re sick and tired of reporting break-ins, illegal dumping and people setting off fireworks on the Fourth of July. They’re also worried that at some point they’ll have to call about something more serious than a mound of old tires or someone coming to steal the wrought iron fence piece by piece.</p>
+
+    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-plate="wright">“They need to tear it down,” Kisha said. “It just makes the neighborhood look horrible.”</p>
 
   </div>
 </div>
@@ -531,7 +553,8 @@
     opener: document.getElementById('plate-opener'),
     clip:   document.getElementById('plate-clip'),
     house:  document.getElementById('plate-house'),
-    walker: document.getElementById('plate-walker')
+    walker: document.getElementById('plate-walker'),
+    wright: document.getElementById('plate-wright')
   };
   const clipVideo = PLATES.clip.querySelector('video');
   // True only once a real file has replaced the placeholder source.
