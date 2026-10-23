@@ -19,6 +19,17 @@
     --cream:  #f4f0e6;
     --border: #ccd8db;
     --navy:   #1a1b2e;   /* the mask colour, and the stage behind the map */
+    /* Population change 2000–2010, dark to light; LOSS in the script matches. */
+    --loss-high: var(--teal);   /* lost a fifth or more */
+    --loss-mid:  #51a89a;       /* lost 10–20% */
+    --loss-low:  #a9d2cf;       /* lost under 10% */
+    --growth:    #daeae5;       /* grew */
+    /* What became of the 2010-11 buildings; STATUS in the script matches. */
+    --reuse-reused: var(--slate);
+    --reuse-vacant: var(--red);
+    --reuse-park:   #d0d64c;
+    --reuse-lot:    #e56430;
+    --reuse-school: #fff;
     --card-shadow: 0 20px 50px rgba(0,0,0,.4);
     /* The run of empty rail a full-screen chapter needs on either side of it.
        The turn fires as the copy before the gap leaves the top of the window,
@@ -63,26 +74,40 @@
      hands; the cost is the school's entrance columns at the right edge. */
   .plate img[src*="MSI_6934"] { object-position: 22% center; }
 
-  /* ---- the two photographs that punctuate the close-up ---- */
-  .photos { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
-  .photo  { position: absolute; margin: 0; padding: 0;
-            box-shadow: var(--card-shadow);
-            opacity: 0; transform: translateY(16px) scale(.97);
-            transition: opacity .9s ease, transform .9s ease; }
-  .photo img { display: block; width: 100%; height: auto; }
-  .photo.is-visible { opacity: 1; transform: none; }
+  /* Two photographs sharing a plate, halving the stage between them. The navy
+     is the plate's own, not the stage showing through: the map is live behind
+     every plate, so the hairline between the two photographs would be a window
+     onto it, and so would either photograph's box before it has loaded. Each is
+     3:2 in a half-stage twice that wide, so a quarter of their height goes;
+     held above centre, which keeps Bickerstaff's head in the upper frame and
+     the head of the yearbook spread in the lower one. */
+  .plate--stack { display: grid; grid-template-rows: 1fr 1fr; gap: 3px;
+                  background: var(--navy); }
+  .plate--stack img { height: 100%; min-height: 0; }
+  .plate img[src*="Cleveland-Closed-Schools-East-High"] { object-position: center 35%; }
+  /* The school is a reflection in a puddle, off to the left of the frame, and
+     covering this stage throws away a third of the width. Held at 30% so the
+     reflection stays whole; what goes is empty pavement at the right. */
+  .plate img[src*="MSI_3040"] { object-position: 30% center; }
+  /* A portrait with her head close to the top of the frame. Covering this stage
+     takes a third of the height, and taking it evenly would cut the top off her
+     headwrap, so the crop is held to the top and spends the loss on her shirt. */
+  .plate img[src*="Cleveland-School-Closings-40"] { object-position: center top; }
+  /* A plate carrying a clip keeps its own navy: there is a moment before the
+     first frame paints, and the map is live behind every plate. */
+  .plate--clip { background: var(--navy); }
+  /* Mt. Auburn is a 16:9 picture letterboxed into a 16:10 file, with 80px of
+     black baked into the top and the bottom — 5% of the height each. Covering
+     the stage fills it with the whole frame, bars and all, so the clip is
+     scaled past them instead: 1.125 clears both with a few pixels to spare.
+     The extra width it costs is cropped by the stage, which was cropping width
+     anyway. The poster rides along and is cropped a little harder for it. */
+  .plate--clip video { transform: scale(1.125); }
 
-  /* Positioned against the stage, not the viewport. Each width takes the smallest
-     of a height-based size, a hard cap, and a share of the stage width, so the two
-     never collide however the stage is shaped. 1 sits top-right and 2 bottom-left:
-     opposite corners, so they clear each other on both axes, and neither reaches
-     the school at the centre of the circle. aspect-ratio is each file's real ratio. */
-  #photo-1 { aspect-ratio: 2560 / 1703;                  /* landscape 3:2 */
-             width: min(46vh, 480px, 54%);
-             top: 2vh; right: 2vh; }
-  #photo-2 { aspect-ratio: 1703 / 2560;                  /* portrait 2:3 */
-             width: min(34vh, 360px, 38%);
-             bottom: 2vh; left: 2vh; }
+  /* While the veil is down the stage cuts rather than crossfades. A plate still
+     fading when the veil lifts would be the chapter before showing through the
+     one the reader has arrived at. */
+  body.turning .plate { transition: none; }
 
   /* The 16 closed schools. Screen-fixed squares, so they keep their size at any
      zoom. MapLibre writes `transform` on the marker element itself, so the square
@@ -91,12 +116,17 @@
   .closure     { width: 11px; height: 11px; pointer-events: none; }
   .closure-box { display: block; width: 100%; height: 100%;
                  opacity: 0; transform: scale(.4);
-                 transition: opacity .45s ease, transform .45s ease; }
+                 transition: opacity .45s ease, transform .45s ease,
+                             background-color .6s ease; }
   .closure-box--old { background: var(--yellow); }
   .closure-box--new { background: var(--red); }
   body.closures-on     .closure-box--old,
   body.closures-new-on .closure-box--new { opacity: 1; transform: none;
                                            transition-delay: calc(var(--i) * 70ms); }
+  /* Where the piece turns to what became of the buildings, each square takes
+     the colour of its own fate. It rides on the marker as a custom property,
+     set when the marker is placed, so a square and the key cannot drift. */
+  body.closures-status .closure-box--old { background: var(--status); }
 
   /* Legend. Tied to the map being the visible plate as well as to the squares,
      so it cannot strand itself on top of a photograph: the narrative sections
@@ -111,10 +141,41 @@
   .legend-row:last-child { margin-bottom: 0; }
   .legend-swatch { display: block; width: 12px; height: 12px; flex: none; }
   .legend-row--old .legend-swatch { background: var(--yellow); }
+  .swatch--high { background: var(--loss-high); }
+  .swatch--mid  { background: var(--loss-mid); }
+  .swatch--low  { background: var(--loss-low); }
+  .swatch--grew { background: var(--growth); }
+  .swatch--reused { background: var(--reuse-reused); }
+  .swatch--vacant { background: var(--reuse-vacant); }
+  .swatch--park   { background: var(--reuse-park); }
+  .swatch--lot    { background: var(--reuse-lot); }
+  .swatch--school { background: var(--reuse-school); }
   .legend-row--new .legend-swatch { background: var(--red); }
   /* The second entry waits for the squares it describes. */
   .legend-row--new { opacity: 0; transition: opacity .5s ease; }
   body.closures-new-on .legend-row--new { opacity: 1; }
+  /* The key follows the squares: the two waves, or what became of them. */
+  .legend-status { display: none; }
+  body.closures-status .legend-status { display: block; }
+  body.closures-status .legend-row--old,
+  body.closures-status .legend-row--new { display: none; }
+
+  /* The title the choropleth is read by. It belongs to the map, so it rides
+     inside .stage and takes the window along with it; top left, against the
+     legend's bottom left. */
+  .map-title { position: absolute; left: 2vh; top: 2vh; z-index: 7;
+               opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+  body.tracts-on .map-title { opacity: 1; }
+  /* The two decades sit in the same grid cell so one can cross into the other
+     on the map's own clock, without the key under them moving. */
+  .map-title-heads { display: grid; margin: 0 0 .8rem; }
+  .map-title-head { grid-area: 1 / 1; margin: 0;
+                    font-family: var(--font-heading); font-weight: 700;
+                    font-size: clamp(18px, 2vw, 26px); line-height: 1.15;
+                    color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6);
+                    opacity: 0; transition: opacity .6s ease; }
+  body.decade-2000s .map-title-head--2000s,
+  body.decade-2010s .map-title-head--2010s { opacity: 1; }
 
   /* ---- the copy rail ----
      No z-index of its own: the montage chapter's cards have to reach above the
@@ -140,33 +201,20 @@
                           text-decoration: none; }
   .entry-meta .author a:hover { text-decoration: underline; }
 
-  /* Paragraphs are opaque and move 1:1 with scroll, like real article copy —
-     the generous bottom margin is what makes each one arrive on its own. */
+  /* The copy in the two tracks reads as an ordinary story: paragraphs set at a
+     normal article gap and the reader is carried by the sentences, not by a
+     screen of scroll between each one. The stage changes under continuous copy.
+     Scroll gaps are left to the card chapters, which need the room: see
+     --screen-gap, .card and .coda. */
   .para { font-size: clamp(18px, 1.9vw, 21px); line-height: 1.75;
-          max-width: 34em; margin: 0 0 75vh; }
+          max-width: 34em; margin: 0 0 1.5em; }
+  /* The piece keeps a tail rather than ending one paragraph break after its
+     last line. */
   .para:last-child { margin-bottom: 55vh; }
 
-  /* Out of the montage chapter the piece becomes an ordinary story: from Walker's
-     first paragraph on, the copy sets at a normal article gap and the reader is
-     carried by the sentences rather than by a screen of scroll between each one.
-     The whole scroll gap survives only where the stage changes hands, which is
-     what .turn marks — script applies it by comparing each cue's plate with the
-     one before, so adding a paragraph or a plate needs no bookkeeping here. It
-     is on .cue rather than on .para so a section head that turns the stage, like
-     the last one, gets the same room as a paragraph that does. */
-  .section-head ~ .para { margin-bottom: 1.5em; }
-  .cue.turn             { margin-top: 46vh; }
-  /* Declared after .turn, and wins where a cue does both. */
-  .cue.screen-turn      { margin-top: var(--screen-gap); }
-  /* Except where the copy runs straight on: Wright's first paragraph names the
-     neighbor the sentence before it leaves unnamed, so it cannot be held a
-     screen of scroll away. Her photograph changes under continuous copy
-     instead. Zero rather than the paragraph gap, which the margin below the
-     previous paragraph already supplies. */
-  .cue.turn.runs-on { margin-top: 0; }
-  /* More specific than the gap above, so the piece keeps its tail rather than
-     ending one paragraph break after the last line. */
-  .section-head ~ .para:last-child { margin-bottom: 55vh; }
+  /* The one gap in the rail that is not a card's: the run of empty rail a
+     full-screen chapter needs on either side of it. */
+  .cue.screen-turn { margin-top: var(--screen-gap); }
   /* Section subhead, after Signal's p.jw-item-sub: condensed bold, and it sits
      tight above its own copy rather than taking a full scroll gap. */
   .section-head { font-family: var(--font-heading); font-weight: 700;
@@ -226,11 +274,10 @@
      the other section heads. Its room above is --screen-gap, by way of .turn. */
   .section-head.card { margin-bottom: 34vh;
                        font-size: clamp(24px, 2.6vw, 34px); line-height: 1.2; }
-  /* The last beat, with nothing to read on it: the tract lines come up and the
-     camera pulls all the way back, so the piece ends on the city it has been
-     working across. It needs a box of its own to cross the reading line with,
-     and the room above it is for the pull-back to the quadrant to land first. */
-  .coda { margin-top: 100vh; height: 55vh; margin-bottom: 70vh; }
+  /* The closing beats. Each waits on the camera move before it to land, which
+     is what the room above them is for; .card--last gives the last one the
+     piece's tail. */
+  .coda { margin-top: 100vh; }
 
   /* A tail where a chapter ends the piece. Where copy follows, the gap that cue
      carries above it is longer and the two collapse to it. */
@@ -250,20 +297,15 @@
     .stage-col { height: 58vh; }
     .rail { padding: 0 7vw; }
     .masthead { padding-top: 7vh; margin-bottom: 48vh; }
-    .para { margin-bottom: 62vh; max-width: none; }
+    .para { max-width: none; }
     .card { max-width: none; }
     .entry-title { font-size: clamp(30px, 8vw, 42px); }
 
-    /* The stage is short and barely wider than the circle here, so size the photos
-       off the stage's own height and keep both clear of the middle band where the
-       school sits: 1 along the top, 2 along the bottom. */
-    #photo-1 { width: auto; height: 34%; top: 2%;   bottom: auto; left: auto; right: 3%;  }
-    #photo-2 { width: auto; height: 44%; top: auto; bottom: 2%;   left: 3%;   right: auto; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .photo, .closure-box, .plate,
-    .montage, .veil { transition: none; }   /* plates hard-cut, no crossfade */
+    .closure-box, .plate,
+    .montage, .veil, .map-title-head { transition: none; }   /* hard-cut, no crossfade */
     body.closures-on .closure-box { transition-delay: 0ms; }
   }
 </style>
@@ -293,36 +335,72 @@
              alt="" loading="lazy" decoding="async">
       </figure>
 
+      <figure class="plate plate--stack" id="plate-east">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/10/Cleveland-Closed-Schools-East-High-School-3-scaled.jpg"
+             alt="" loading="lazy" decoding="async">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/10/Cleveland-Closed-Schools-East-High-School-2-scaled.jpg"
+             alt="" loading="lazy" decoding="async">
+      </figure>
+
+      <figure class="plate" id="plate-keith">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3040-scaled.jpg"
+             alt="" loading="lazy" decoding="async">
+      </figure>
+
+      <!-- Mt. Auburn, the school across the street from both women. The poster
+           is the still of it from Washington's porch that the copy column shows
+           a few paragraphs earlier, so the stage is full of the right building
+           from the first frame, cached, while the 27 MB clip catches up. -->
+      <figure class="plate plate--clip" id="plate-martin" aria-hidden="true">
+        <video muted loop playsinline preload="metadata"
+               poster="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-6-scaled.jpg">
+          <source src="https://signalcleveland.org/wp-content/uploads/2026/10/Mt-Auburn-Junior-High.mp4" type="video/mp4">
+        </video>
+      </figure>
+
+      <figure class="plate" id="plate-washington">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-40-scaled.jpg"
+             alt="" loading="lazy" decoding="async">
+      </figure>
+
       <figure class="plate" id="plate-wheeler">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/10/20260326_GregWheeler_CollinwoodHighSchool-5-scaled.jpg"
              alt="" loading="lazy" decoding="async">
       </figure>
 
-      <!-- The opener's photograph is deliberately not repeated here. -->
       <div class="legend" id="legend" aria-hidden="true">
         <p class="legend-row legend-row--old"><span class="legend-swatch"></span>Closed 2010–11</p>
         <p class="legend-row legend-row--new"><span class="legend-swatch"></span>Closed 2026</p>
+        <div class="legend-status">
+          <p class="legend-row"><span class="legend-swatch swatch--reused"></span>Reused</p>
+          <p class="legend-row"><span class="legend-swatch swatch--school"></span>New school</p>
+          <p class="legend-row"><span class="legend-swatch swatch--park"></span>Park</p>
+          <p class="legend-row"><span class="legend-swatch swatch--lot"></span>Empty lot</p>
+          <p class="legend-row"><span class="legend-swatch swatch--vacant"></span>Vacant</p>
+        </div>
       </div>
 
-      <div class="photos" aria-hidden="true">
-        <figure class="photo" id="photo-1">
-          <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7004-scaled.jpg" alt="" loading="eager" decoding="async">
-        </figure>
-        <figure class="photo" id="photo-2">
-          <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7782-scaled.jpg" alt="" loading="eager" decoding="async">
-        </figure>
+      <div class="map-title" aria-hidden="true">
+        <div class="map-title-heads">
+          <p class="map-title-head map-title-head--2000s">Population loss, 2000–2010</p>
+          <p class="map-title-head map-title-head--2010s">Population loss, 2010–2020</p>
+        </div>
+        <p class="legend-row"><span class="legend-swatch swatch--high"></span>Lost 20% or more</p>
+        <p class="legend-row"><span class="legend-swatch swatch--mid"></span>Lost 10% to 20%</p>
+        <p class="legend-row"><span class="legend-swatch swatch--low"></span>Lost 0% to 10%</p>
+        <p class="legend-row"><span class="legend-swatch swatch--grew"></span>Grew</p>
       </div>
     </div>
   </div>
 
   <!-- RIGHT TRACK: the copy. Every .cue declares the state it wants, so scrolling
-       back up reverses for free: data-photos = how many photos show,
-       data-mask = circle | city, data-view = close | city, data-squares = on | off,
+       back up reverses for free: data-mask = circle | city,
+       data-view = close | city, data-squares = on | off,
        data-screen = track | montage.
        Leaving the headline behind is what crossfades the opener into the map. -->
   <div class="rail">
 
-    <header class="cue masthead" data-photos="0" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="opener">
+    <header class="cue masthead" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="opener">
       <h1 class="entry-title">How closing a school changes a community</h1>
       <p class="entry-subhead">Old buildings, faded bricks and the fallout of a school closure</p>
       <div class="entry-meta">
@@ -333,95 +411,202 @@
       </div>
     </header>
 
-    <p class="cue para" data-photos="1" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
+    <p class="cue para" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
 
-    <p class="cue para" data-photos="2" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
+    <p class="cue para" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
 
-    <p class="cue para pivot-lead" data-photos="0" data-mask="city" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">Fulton isn’t unique.</p>
+    <p class="cue para pivot-lead" data-mask="city" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">Fulton isn’t unique.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">This summer — against the backdrop of the decision to shutter the largest number of schools in Cleveland's history — Signal Cleveland set out to learn how school closures ripple into nearby neighborhoods. We analyzed census data, knocked on doors and went to block club meetings. What we found is that in most places the closures, like Fulton’s chimney, cast long shadows.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">This summer — against the backdrop of the decision to shutter the largest number of schools in Cleveland's history — Signal Cleveland set out to learn how school closures ripple into nearby neighborhoods. We analyzed census data, knocked on doors and went to block club meetings. What we found is that in most places the closures, like Fulton’s chimney, cast long shadows.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="map" data-warm="montage">We narrowed in on a wave of 16 school closures from 2010 and 2011. In census tracts where schools closed during that time population fell by an average of 17% over the next decade. At the same time, the population in areas without closures declined by only 0.5% during the same period. And even reuse of school buildings didn’t necessarily stem these declines.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="map" data-warm="montage">We narrowed in on a wave of 16 school closures from 2010 and 2011. In census tracts where schools closed during that time population fell by an average of 17% over the next decade. At the same time, the population in areas without closures declined by only 0.5% during the same period. And even reuse of school buildings didn’t necessarily stem these declines.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="map">These numbers can’t tell the whole story of what these schools meant, but the people who stayed can. We had conversations with over 30 neighbors who live around these schools — and in many cases attended them. They told us these schools functioned as civic institutions and sites of memory and that their closures affected their quality of life.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="map">These numbers can’t tell the whole story of what these schools meant, but the people who stayed can. We had conversations with over 30 neighbors who live around these schools — and in many cases attended them. They told us these schools functioned as civic institutions and sites of memory and that their closures affected their quality of life.</p>
 
     <!-- The montage chapter. Every cue in it asks for the clip, so the screen
-         still turns over if the title is scrolled past too fast to register, and
-         every one asks for Walker's portrait, which settles onto the stage behind
-         the clip so the chapter can fade straight back to it. -->
-    <h2 class="cue section-head card" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Life across from an abandoned school</h2>
+         still turns over if the opening line is scrolled past too fast to
+         register, and every one asks for Walker's portrait, which settles onto
+         the stage behind the clip so the chapter can fade straight back to it. -->
+        <h2 class="cue section-head card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Kisha and Harris McMichael’s home sits face to face with Fulton.</h2>
 
-    <p class="cue card" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Kisha and Harris McMichael’s home sits face to face with Fulton.</p>
+    <p class="cue card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Kisha attended Fulton and can't help but think fondly of how it used to be. She remembers its playground filled with kids and a report she wrote on the school's namesake, Robert Fulton, who is credited with inventing the steamboat. Now, the school’s hulking shell is a source of bitterness to the point that Kisha’s voice strains and catches a bit while discussing it.</p>
 
-    <p class="cue card" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Kisha attended Fulton and can't help but think fondly of how it used to be. She remembers its playground filled with kids and a report she wrote on the school's namesake, Robert Fulton, who is credited with inventing the steamboat. Now, the school’s hulking shell is a source of bitterness to the point that Kisha’s voice strains and catches a bit while discussing it.</p>
+    <p class="cue card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">“It's just disappointing,” she said. “You know, Robert Fulton was a good school.”</p>
 
-    <p class="cue card" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">“It's just disappointing,” she said. “You know, Robert Fulton was a good school.”</p>
+    <p class="cue card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">The couple lives in the home where Kisha grew up. But it’s almost been entirely rebuilt following a house fire in 2015. Listening to Harris, who works in construction, talk through the process of rebuilding the house himself — including drawing his own blueprints — it’s clear what he’s poured into the home. That only adds to his frustration when it comes to Fulton, which Harris sees as a hurdle to selling or renting the couple’s house some day.</p>
 
-    <p class="cue card" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">The couple lives in the home where Kisha grew up. But it’s almost been entirely rebuilt following a house fire in 2015. Listening to Harris, who works in construction, talk through the process of rebuilding the house himself — including drawing his own blueprints — it’s clear what he’s poured into the home. That only adds to his frustration when it comes to Fulton, which Harris sees as a hurdle to selling or renting the couple’s house some day.</p>
+    <p class="cue card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">“Look over there,” Harris said, gesturing in the direction of the school. “It depreciates the value of our home, of everything.”</p>
 
-    <p class="cue card" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">“Look over there,” Harris said, gesturing in the direction of the school. “It depreciates the value of our home, of everything.”</p>
+    <p class="cue card card--last" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Fulton closed in 2010 after serving the community for more than 80 years. In 2021, the city awarded the building to a suburban development firm for use as housing, but that deal fell apart, district records show. For now, the building remains on the school district’s books, with no plans to tear it down anytime soon.</p>
 
-    <p class="cue card card--last" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Fulton closed in 2010 after serving the community for more than 80 years. In 2021, the city awarded the building to a suburban development firm for use as housing, but that deal fell apart, district records show. For now, the building remains on the school district’s books, with no plans to tear it down anytime soon.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Down the block, Erick Walker, who like Kisha went to Fulton, has been trying to get answers about the school for a long time. The neat blue  home he lives in now has been in his family since he moved there with his mother and sister as a 12-year-old. He’s now in his late fifties.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Down the block, Erick Walker, who like Kisha went to Fulton, has been trying to get answers about the school for a long time. The neat blue  home he lives in now has been in his family since he moved there with his mother and sister as a 12-year-old. He’s now in his late fifties.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">He’s spent the last six years advocating for answers about the school. That means attending city council meetings, writing to the mayor and being interviewed by the TV news. He even launched a city council campaign in 2024 with the hope it might nudge some action on the school.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">He’s spent the last six years advocating for answers about the school. That means attending city council meetings, writing to the mayor and being interviewed by the TV news. He even launched a city council campaign in 2024 with the hope it might nudge some action on the school.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Watching Fulton deteriorate bothers Walker. He knows it’s a drag on the neighborhood’s property values. But it also goes deeper than that, for him the school is also a symbol of how his community has been neglected.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Watching Fulton deteriorate bothers Walker. He knows it’s a drag on the neighborhood’s property values. But it also goes deeper than that, for him the school is also a symbol of how his community has been neglected.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">“It’s frustration that nobody seems to do anything about it,” he said. “It’s anger that I’m being ignored. That whomever the powers may be doesn’t value our community enough to do anything about it.”</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">“It’s frustration that nobody seems to do anything about it,” he said. “It’s anger that I’m being ignored. That whomever the powers may be doesn’t value our community enough to do anything about it.”</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Over the years, since Fulton closed, Walker and the McMichael’s have watched the blocks around the school change. From 2010 to 2024 the census tract containing the school — an Oklahoma shaped area bordered by Milverton Rd. and Kinsman Ave on the north and south sides and by East 140th and East 149th on the west and east sides — lost a third of its residents.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Over the years, since Fulton closed, Walker and the McMichael’s have watched the blocks around the school change. From 2010 to 2024 the census tract containing the school — an Oklahoma shaped area bordered by Milverton Rd. and Kinsman Ave on the north and south sides and by East 140th and East 149th on the west and east sides — lost a third of its residents.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">They believe that closure of the school had “absolutely” something to do with that decline. At one point this winter, Walker called a senior neighbor of his to check up on her only to learn she’d moved away, a decision she blamed on crime and Fulton’s closure.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">They believe that closure of the school had “absolutely” something to do with that decline. At one point this winter, Walker called a senior neighbor of his to check up on her only to learn she’d moved away, a decision she blamed on crime and Fulton’s closure.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Catherine Wright is that neighbor. She remembers the school changing the neighborhood greatly, in part because when Fulton closed, “the joy and laughter of children coming up and down the street” disappeared.</p>
 
-    <p class="cue para runs-on" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Catherine Wright is that neighbor. She remembers the school changing the neighborhood greatly, in part because when Fulton closed, “the joy and laughter of children coming up and down the street” disappeared.</p>
-
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">“The police car was there, so the kids wouldn't get hurt,” she told Signal Cleveland. “We had a school crossing guard that was at the end of the street…kids were able to go to the store. It was actually really, really safe.”</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">“The police car was there, so the kids wouldn't get hurt,” she told Signal Cleveland. “We had a school crossing guard that was at the end of the street…kids were able to go to the store. It was actually really, really safe.”</p>
 
     <figure class="rail-figure">
       <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3214-scaled.jpg"
            alt="" width="2560" height="1703" loading="lazy" decoding="async">
     </figure>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Then there’s all the negative attention the empty school has attracted since it closed. People will routinely break into Fulton and dump trash including mattresses and pieces of furniture on the school grounds, Harris said. White also recalls watching birds of prey flying over the building in long, lazy circles presumably attracted by something, like a dead animal, decaying inside.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Then there’s all the negative attention the empty school has attracted since it closed. People will routinely break into Fulton and dump trash including mattresses and pieces of furniture on the school grounds, Harris said. White also recalls watching birds of prey flying over the building in long, lazy circles presumably attracted by something, like a dead animal, decaying inside.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Since the city began publicly logging 311 calls in summer of 2017 there have been over <span class="tk">xx</span> calls for illegal dumping in a radius just a quarter mile out from Fulton. The feeling of deteriorating safety has gotten so bad to the point where Kisha no longer visits the corner store she used to love.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Since the city began publicly logging 311 calls in summer of 2017 there have been over <span class="tk">xx</span> calls for illegal dumping in a radius just a quarter mile out from Fulton. The feeling of deteriorating safety has gotten so bad to the point where Kisha no longer visits the corner store she used to love.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">At this point, Fulton’s neighbors just want the building torn down. They’re sick and tired of reporting break-ins, illegal dumping and people setting off fireworks on the Fourth of July. They’re also worried that at some point they’ll have to call about something more serious than a mound of old tires or someone coming to steal the wrought iron fence piece by piece.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">At this point, Fulton’s neighbors just want the building torn down. They’re sick and tired of reporting break-ins, illegal dumping and people setting off fireworks on the Fourth of July. They’re also worried that at some point they’ll have to call about something more serious than a mound of old tires or someone coming to steal the wrought iron fence piece by piece.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">“They need to tear it down,” Kisha said. “It just makes the neighborhood look horrible.”</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">“They need to tear it down,” Kisha said. “It just makes the neighborhood look horrible.”</p>
 
-    <h2 class="cue section-head" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">Fulton isn’t unique</h2>
+    <h2 class="cue section-head" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">Fulton isn’t unique</h2>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">The district shuttered 18 school buildings this year. District officials were adamant the cause was fewer kids — a result of population and birthrate declines. They made the case that without closures CMSD can’t offer students the educational opportunities they deserve.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">The district shuttered 18 school buildings this year. District officials were adamant the cause was fewer kids — a result of population and birthrate declines. They made the case that without closures CMSD can’t offer students the educational opportunities they deserve.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">In response, community leaders warned that closing schools would only push more families from their neighborhoods. Current forecasts predict, a decade from now, the district will have lost an eighth of its current students.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">In response, community leaders warned that closing schools would only push more families from their neighborhoods. Current forecasts predict, a decade from now, the district will have lost an eighth of its current students.</p>
 
     <!-- The map hands over to Wheeler for the close; the first cue here is the
          turn, so it keeps a screen of scroll above it for the crossfade. -->
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Greg Wheeler, an alumnus of the now-closed Collinwood High School who grew up in the Glenville neighborhood, has spent a lot of time thinking about the chicken-and-egg nature of this problem. For more than a decade, he’s coached football at Collinwood High School, work he describes as being about “saving and transforming lives.”</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Greg Wheeler, an alumnus of the now-closed Collinwood High School who grew up in the Glenville neighborhood, has spent a lot of time thinking about the chicken-and-egg nature of this problem. For more than a decade, he’s coached football at Collinwood High School, work he describes as being about “saving and transforming lives.”</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">At the same time, he’s watched as families have left the neighborhood for nearby suburbs. He believes that, in the past, a continuum of neighborhood schools helped keep families rooted from kindergarten through high school. Wheeler blames a mix of school closures and the district’s embrace of open enrollment and speciality schools through the Cleveland Plan for disrupting neighborhood schools and concentrating educational opportunities on the West Side of the city.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">At the same time, he’s watched as families have left the neighborhood for nearby suburbs. He believes that, in the past, a continuum of neighborhood schools helped keep families rooted from kindergarten through high school. Wheeler blames a mix of school closures and the district’s embrace of open enrollment and speciality schools through the Cleveland Plan for disrupting neighborhood schools and concentrating educational opportunities on the West Side of the city.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Now, “our neighborhoods suffer because our best and brightest often flee for a better life,” he reflected in a long email to me on the eve of Collinwood’s last day this spring. But he’s also realistic that this isn’t just about schools.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Now, “our neighborhoods suffer because our best and brightest often flee for a better life,” he reflected in a long email to me on the eve of Collinwood’s last day this spring. But he’s also realistic that this isn’t just about schools.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">“Everybody has to be held accountable, but our focus is just on school,” he said, reflecting on the lack of grocery stores, community spaces and other amenities beyond schools. “I think that there needs to be some equality across neighborhoods. There are certain neighborhoods that get more or seem like they get more than others.”</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">“Everybody has to be held accountable, but our focus is just on school,” he said, reflecting on the lack of grocery stores, community spaces and other amenities beyond schools. “I think that there needs to be some equality across neighborhoods. There are certain neighborhoods that get more or seem like they get more than others.”</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Council Member Mike Polensek, who represents Collinwood and is a graduate of its historic high school, has loudly laid the blame at the feet of the district and the mayor who appoints its board.</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Council Member Mike Polensek, who represents Collinwood and is a graduate of its historic high school, has loudly laid the blame at the feet of the district and the mayor who appoints its board.</p>
 
-    <p class="cue para" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler" id="polensek">“The various neighborhoods who’ve had the highest population losses,” he said. “This is where they have decimated the public school system.… Unless we figure out how to stabilize the school system, we cannot stabilize the city.”</p>
+    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler" id="polensek">“The various neighborhoods who’ve had the highest population losses,” he said. “This is where they have decimated the public school system.… Unless we figure out how to stabilize the school system, we cannot stabilize the city.”</p>
 
     <!-- The close. The stage leaves its column for the whole window and the map
          comes back on Collinwood High School, the copy riding over it on cards
          the way it rides over the clip. The first card's view is placed under
          the veil, since it has to be there before the veil lifts; the second
          pulls the camera back to the quadrant while that card is read. -->
-    <p class="cue card" data-photos="0" data-mask="city" data-view="collinwood" data-squares="both" data-tracts="off" data-screen="fullmap" data-plate="map">Driving with Wheeler down St. Clair Avenue from where the high school sits at the five points intersection to where he grew up just off of East 152nd Street, the impact of school closures is clear. Every few blocks he could turn into a side street and find a residential pocket where a school once stood — or now stands empty.</p>
+    <p class="cue card" data-mask="city" data-view="collinwood" data-squares="both" data-tracts="off" data-screen="fullmap" data-plate="map">Driving with Wheeler down St. Clair Avenue from where the high school sits at the five points intersection to where he grew up just off of East 152nd Street, the impact of school closures is clear. Every few blocks he could turn into a side street and find a residential pocket where a school once stood — or now stands empty.</p>
 
-    <p class="cue card card--last" data-photos="0" data-mask="city" data-view="northeast" data-squares="both" data-tracts="off" data-screen="fullmap" data-plate="map">In the Northeast quadrant of the city, home to both Collinwood and Glenville, we found records of nearly 20 schools that have closed since 2000.</p>
+    <p class="cue card" data-mask="city" data-view="northeast" data-squares="both" data-tracts="off" data-screen="fullmap" data-plate="map">In the Northeast quadrant of the city, home to both Collinwood and Glenville, we found records of nearly 20 schools that have closed since 2000.</p>
 
-    <div class="cue coda" data-photos="0" data-mask="city" data-view="city" data-squares="both" data-screen="fullmap" data-plate="map" data-tracts="on" aria-hidden="true"></div>
+    <!-- The last card, arriving with the choropleth: the tracts colour in and
+         the camera pulls back to the whole city while it is read. This year's
+         closures come off here too — the map is showing 2000-2010 now, so only
+         the wave that falls inside it is left on. -->
+    <p class="cue card coda" data-mask="city" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2000s">Many of those schools were part of the crop of closures in 2010 and 2011. In the decade leading up to that year, population losses were especially pronounced in the census tracts where schools later shuttered. But after that slew of closures, the citywide trend and the trend in the census tracts where schools were shut diverged.</p>
+
+    <!-- The same map over the following decade. Only the fill changes: the
+         camera and the squares stay where they are, so the two readings sit
+         against each other. -->
+    <p class="cue card coda" data-mask="city" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2010s">Over the next decade, from 2010 to 2020, population declined in areas unaffected by school closings at an average of only around a half percentage point. In places where schools closed in 2010 or 2011, it declined, on average, by 17%.</p>
+
+    <p class="cue card" data-mask="city" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2010s">In other words, the data shows the closures could have entrenched accelerated population decline.</p>
+
+    <!-- The squares turn from when the buildings closed to what became of them.
+         Nothing else moves: the camera, the tracts and the copy column all hold,
+         so the change is the only thing on the page that does. -->
+    <p class="cue card coda" data-mask="city" data-view="eastside" data-squares="status" data-screen="fullmap" data-plate="map" data-tracts="2010s">In both the present and past round of closures, the district and city have hoped to reuse closed schools to benefit the communities around them. In some cases they’ve had success: Henry Longfellow, a stately red brick elementary school, is now senior housing, and the beige-bricked Margaret Ireland hosts the headquarters for a local job training organization.</p>
+
+    <p class="cue card card--last" data-mask="city" data-view="eastside" data-squares="status" data-screen="fullmap" data-plate="map" data-tracts="2010s">In 2011 and 2010, reuse — while costly and difficult — didn’t always stem population losses, our analysis found. Neither did demolition. Take South High School and East High School. Both schools have new, public uses, one as a police training center and the other as a district administrative building. But the census tracts containing the schools have lost about half their residents since the once-beloved high schools closed.</p>
+
+    <!-- Out of the map and back onto the two tracks: Bickerstaff and her
+         yearbook on the stage, the pages she is looking at set into the copy
+         beside the lines they belong to. The boundary names this plate, so it
+         is up when the veil lifts rather than a screen of scroll later. -->
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Reuse also didn’t always address the intangible losses people felt when these institutions closed. Schools, they told us, created a sense of togetherness and community pride. They were institutions to take pride in. That disappeared even when the building remained in use. At one home, a few blocks down from East High, a group of neighbors who’d grown up together became emotional as reminiscing led one of them to sing the school’s fight song.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“Old East High, we love you, yes we do, to your standards we’ll be ever true; loyal gold and royal blue,” the first couple bars go.</p>
+
+    <figure class="rail-figure">
+      <img src="https://signalcleveland.org/wp-content/uploads/2026/10/East-High-Yearbook1.jpg"
+           alt="" width="1600" height="2500" loading="lazy" decoding="async">
+    </figure>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Doreen Bickerstaff is one of those neighbors. She grew up down the street from East High and graduated from the school in 1978. She remembers it as a neighborhood institution people took pride in. She’s glad the building hasn’t fallen into disrepair, since her brother, an architect, helped design it, but she said the neighborhood isn’t the same without the school.</p>
+
+    <figure class="rail-figure">
+      <img src="https://signalcleveland.org/wp-content/uploads/2026/10/East-High-Yearbook4.jpg"
+           alt="" width="1600" height="2500" loading="lazy" decoding="async">
+    </figure>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“As kids, we felt safe, loved and that sense of community,” she said. “The school was the anchor.”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Daniel Gray-Kontar, a Cleveland-born artist with experience in community-led development in the city, says what Bickerstaff describes gets lost in Cleveland’s use of “the vocabulary of asset management.” When they plan for the future of these buildings, city officials discuss acreage and square footage, but, often, disregard what he describes as the sacredness of these spaces.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“Schools hold so much memory, of the people who have gathered in those buildings and who have made collective meaning together,” he said. “For a generation, or for several generations.”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">When Mary Keith walks past where Giddings Elementary once stood — on East 71st Street in the Fairfax neighborhood — it’s the memories of the good times that bring tears to her eyes.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Her grandkids attended the school, and she volunteered there for nearly two decades, helping to organize carol concerts at Christmas time and school supply drives come August. But, most fondly, she remembers the “Girlfriends Club.”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">It had, she said, only four rules: respect yourself, respect your girlfriends, respect all adults and no fighting. If the girlfriends could manage that, then twice a year, they would get dressed up, some with gloves and long dresses, others in poofy skirts and bobby socks and go for tea at the Ritz-Carlton downtown. The first year they took a school bus. The next year, Keith, with help from a nearby funeral home, organized a limo.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">When the school was closed, the club’s founder and teacher was laid off. And while its students have mostly found their way as they’ve grown up, Keith said, the program no longer exists.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">“It was sad, you know, how they did it,” she said, recalling how she scooped up school-picture-day photos from a dumpster the day the school closed in 2011. “It was just heartbreaking.”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Schools also had a practical function in a lot of neighborhoods as meet-up spots and polling places. When these buildings shuttered, neighbors said they noticed that the city paid less attention to their sidewalks and streets. They pointed to city-owned grass that wasn’t cut, snow that wasn’t cleared as quickly as before, and potholes that weren’t filled. Instead, neighbors took on these public burdens, calling 311 and watching out for break-ins.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off" data-warm="martin">For nearly Carol White’s whole life, Gracemount Elementary had been right across the street. After serving the neighborhood for over half a century, it closed in 2011. It was demolished two years later.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">White remembers as a kid her grandmother would walk her down the block to the school. She also remembers the school as “the place to play basketball, the parking lot was full,” she said.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Later, after she graduated from John F. Kennedy High School, she and her neighbors fundraised together for a new playground at Gracemount. That playground, along with the school building, was demolished after the school closed.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Now, in the place of the neighborhood anchor is an empty grass lot, which White says she is constantly bugging the city to mow.</p>
+
+    <h2 class="cue section-head" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Clarice Washington has lived in Cleveland for nearly 40 years and next to an abandoned school for over a decade.</h2>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Still, with roots in rural Alabama, she considers herself a country girl. She grows summer squash, zucchini, string beans and tomatoes in the garden plot on the side of her home. Her front garden, though, is dedicated to flowers.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">“People tell me I am the only person that has flowers on the street,” she said, gesturing over the banister of her porch. “I love them.”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Across the street, past the white yucca blossoms in her garden, stands the abandoned hull of Mt. Auburn Elementary school, or, as she calls it, “my eyesore.” Just up the block stands its equally imposing older brother, Audubon Middle School, also vacant.</p>
+
+    <figure class="rail-figure">
+      <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-6-scaled.jpg"
+           alt="" width="2560" height="1703" loading="lazy" decoding="async">
+    </figure>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">For a while, Washington held out hope the schools might reopen with some other use. A developer was picked in 2021 to turn both schools into senior housing, but the plan fell through after state lawmakers changed the tax credits that funded it. Deborah Gray, the council member for the area, told Signal Cleveland there’s a new buyer interested in Audubon, but that agreement isn’t close to final either.</p>
+
+    <figure class="rail-figure">
+      <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-3-scaled.jpg"
+           alt="" width="2560" height="1703" loading="lazy" decoding="async">
+    </figure>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">After years of not seeing construction, Washington has settled back into a place of discontented acceptance.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Her neighbor, Tiffany Martin, shares her frustration. Martin lives across the street from Washington. The two women don’t really know each other, but Martin is also bothered by the empty schools.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Martin and her six kids moved back to Cleveland from Georgia two years ago to help her mom, who was retiring and selling the family home. She’s been shocked by how much things have changed since the schools closed.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“The grass was sky high in the fields, where you know the city is supposed to be responsible for cutting it,” she said. “I’m looking like: ‘What is going on?’”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Most evenings this summer the family walked past both empty schools, to drop her youngest off at football practice. Even in a group, Martin worries about them.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">As a kid, she remembers walking to school and summer afternoons spent at the pool at a nearby recreation center. This year the pool wasn’t open. And, on the first day of school, her kids got on buses to take them to different schools more than a mile away. Her own elementary school, a 15-minute walk away, was demolished years ago to make way for affordable housing. Martin says all these things add up to the neighborhood’s failure to do one thing: “thrive.”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“Losing the school in the area, people started to move away from the community, you know?” she said. “Things start to fall apart, and that’s a part of an abandonment.”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">From her front porch, Washington has watched that happen, slowly.</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“Well, I have an island here, as you see,” she said, describing how the neighborhood has changed since 1989, when the school was still open. “There were houses there, and people, homeowners.”</p>
+
+    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">And, problematic for Washington’s garden, the school isn’t just an eyesore — it’s also a refuge for the neighborhood groundhogs. Sitting on her porch in the evenings, she’ll watch them chase each other around the school’s yard where, once, many years ago, kids used to romp around instead.</p>
+
+    <figure class="rail-figure">
+      <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-11-scaled.jpg"
+           alt="" width="2560" height="1703" loading="lazy" decoding="async">
+    </figure>
 
   </div>
 </div>
@@ -453,10 +638,20 @@
   // in the north. The mask does the rest — everything outside the city line
   // goes navy, so what is left is the quadrant itself.
   const NE_BOUNDS = [[-81.65, 41.50], [-81.53, 41.60]];
+
+  // The east side, which the choropleth is read on: everything from the river
+  // through downtown out to the city limit, the lakefront down to the southeast
+  // corner. Twenty-one of the twenty-two closures are inside it, the odd one
+  // out being Kamm's Corners away on the far west side. Against the whole city
+  // it is only about a fifth tighter — the east side runs nearly the full
+  // north-south length of Cleveland, and that is what the fit is bound by —
+  // but it is the half the story happens on, so none of the frame is spent on
+  // the other one.
+  const EAST_BOUNDS = [[-81.70, 41.425], [-81.53, 41.595]];
   const HOLE_RADIUS_M = 130;        // circle radius in metres — widen to show more of the block
   const NAVY = '#1a1b2e';
-  const CREAM = '#f4f0e6';          // --cream, for the tract outlines
-  const TRACT_OPACITY = 0.4;
+  const LOSS = ['#23685b', '#51a89a', '#a9d2cf', '#daeae5'];   // --loss-* above
+  const TRACT_FILL = 0.75;          // sheer enough to keep the city under it
 
   // Outer ring of both masks: the whole world, counter-clockwise.
   const WORLD = [[-180,-85],[180,-85],[180,85],[-180,85],[-180,-85]];
@@ -619,538 +814,659 @@
   // Bounding box of the ring above, for the zoom-out.
   const CITY_BOUNDS = [[-81.87910, 41.39074], [-81.53291, 41.59951]];
 
-  // The city's 159 census tracts — the unit the population analysis in this
-  // piece is run on — from "cleveland census tracts.json" in this folder,
-  // simplified to ~20 m (11,497 source points to 2,271) and inlined for the
-  // same reason the city outline is: the page stays a single file. 20 m is
-  // under a pixel at the zooms these are seen at. One ring per tract, so every
-  // shared edge is drawn by both its neighbours; the line opacity below is set
-  // for that doubled stroke rather than for a single one.
+  // Cleveland's 177 census tracts as the 2010 census drew them, each carrying
+  // the population change it saw over 2000-2010 and then over 2010-2020 as a
+  // band: 0 lost a fifth or more, 1 lost 10-20%, 2 lost under 10%, 3 grew, -1
+  // no reading. Both are baked in rather than joined at runtime, so the page
+  // carries no table. The one -1 is tract 9805, which held a single resident in
+  // 2000 and none in 2010: there is no base to take a percentage of, so it
+  // draws no fill on the second map.
+  //
+  // The boundaries are the Census Bureau's own, kept beside this file as
+  // "cleveland census tracts 2010.json", simplified to ~20 m (12,108 points to
+  // 2,442) and inlined for the same reason the city outline is. They are the
+  // 2010 vintage and not the 2020 one in "cleveland census tracts.json",
+  // because 2010 is what the population table is keyed to: the 2020 boundaries
+  // renumber about a sixth of the city, which would leave Hough, Central,
+  // Fairfax, Glenville, Slavic Village, Ohio City and Tremont with nothing to
+  // colour.
   const TRACTS = [
-    [[-81.59115,41.54512],[-81.59112,41.55452],[-81.59065,41.55615],[-81.58949,41.55695],[-81.57555,41.56300],
-     [-81.57544,41.55327],[-81.58114,41.55185],[-81.58354,41.55055],[-81.58937,41.54593],[-81.59115,41.54512]],
-    [[-81.56821,41.54805],[-81.55749,41.55907],[-81.55365,41.56167],[-81.55210,41.56145],[-81.54779,41.55855],
-     [-81.56085,41.54959],[-81.55860,41.54789],[-81.55831,41.54662],[-81.55692,41.54796],[-81.55665,41.54778],
-     [-81.55650,41.54578],[-81.55679,41.54540],[-81.56534,41.54517],[-81.56564,41.54623],[-81.56821,41.54805]],
-    [[-81.57866,41.46439],[-81.57255,41.46441],[-81.57251,41.45755],[-81.57308,41.45756],[-81.57304,41.45304],
-     [-81.57854,41.45301],[-81.57866,41.46439]],
-    [[-81.71060,41.48136],[-81.70620,41.48293],[-81.69783,41.48663],[-81.69777,41.48440],[-81.69469,41.48440],
-     [-81.69454,41.47902],[-81.69693,41.46996],[-81.70389,41.46986],[-81.70396,41.47259],[-81.70760,41.47256],
-     [-81.70766,41.47499],[-81.70859,41.47729],[-81.71106,41.48120],[-81.71060,41.48136]],
-    [[-81.63341,41.43864],[-81.63330,41.44141],[-81.62337,41.44149],[-81.62509,41.44395],[-81.62416,41.44506],
-     [-81.62370,41.44514],[-81.62313,41.44453],[-81.62173,41.44399],[-81.62134,41.44282],[-81.61834,41.44137],
-     [-81.61525,41.43941],[-81.61527,41.43427],[-81.63325,41.43415],[-81.63341,41.43864]],
-    [[-81.82726,41.45027],[-81.82478,41.45157],[-81.82046,41.44993],[-81.81679,41.45014],[-81.79480,41.45418],
-     [-81.80141,41.44620],[-81.80143,41.44681],[-81.80245,41.44591],[-81.81033,41.44602],[-81.81041,41.44309],
-     [-81.81885,41.44314],[-81.81855,41.44418],[-81.82376,41.44425],[-81.82244,41.44908],[-81.82199,41.44938],
-     [-81.82276,41.44917],[-81.82526,41.44929],[-81.82709,41.44982],[-81.82726,41.45027]],
-    [[-81.63085,41.50530],[-81.63071,41.50591],[-81.63032,41.50586],[-81.62708,41.50938],[-81.61918,41.51081],
-     [-81.61622,41.51081],[-81.61539,41.51128],[-81.61526,41.50374],[-81.62454,41.50344],[-81.63082,41.50375],
-     [-81.63085,41.50530]],
-    [[-81.60890,41.54049],[-81.60327,41.54134],[-81.60102,41.54134],[-81.60074,41.53769],[-81.59933,41.53470],
-     [-81.59462,41.53039],[-81.59824,41.53064],[-81.59821,41.52997],[-81.60645,41.53004],[-81.60890,41.54049]],
-    [[-81.57554,41.56259],[-81.56454,41.56650],[-81.56260,41.56318],[-81.57544,41.55327],[-81.57554,41.56259]],
-    [[-81.61543,41.51586],[-81.60299,41.51593],[-81.60299,41.51710],[-81.60114,41.51711],[-81.59980,41.51798],
-     [-81.59869,41.51795],[-81.59803,41.51752],[-81.59809,41.51610],[-81.59670,41.51613],[-81.59943,41.51355],
-     [-81.60626,41.50822],[-81.60208,41.50525],[-81.60641,41.49919],[-81.60962,41.49726],[-81.60971,41.49785],
-     [-81.61526,41.49780],[-81.61543,41.51586]],
-    [[-81.74886,41.46620],[-81.74883,41.46846],[-81.74672,41.46923],[-81.74489,41.47046],[-81.74250,41.47061],
-     [-81.74070,41.47114],[-81.73980,41.47075],[-81.73569,41.47114],[-81.73802,41.46463],[-81.74139,41.46485],
-     [-81.74141,41.46337],[-81.74661,41.46476],[-81.74662,41.46216],[-81.74869,41.46220],[-81.74886,41.46620]],
-    [[-81.59195,41.47800],[-81.59039,41.47799],[-81.59039,41.47965],[-81.58474,41.47905],[-81.58463,41.47859],
-     [-81.58503,41.47833],[-81.58450,41.47786],[-81.58509,41.47703],[-81.58442,41.47645],[-81.58493,41.47615],
-     [-81.58464,41.47590],[-81.58501,41.47567],[-81.58459,41.47530],[-81.58505,41.47506],[-81.58472,41.47478],
-     [-81.58501,41.47437],[-81.58447,41.47390],[-81.58488,41.47316],[-81.58460,41.47294],[-81.58471,41.47113],
-     [-81.59188,41.47109],[-81.59195,41.47800]],
-    [[-81.60289,41.47279],[-81.59187,41.47283],[-81.59188,41.47109],[-81.58471,41.47113],[-81.58466,41.46435],
-     [-81.60286,41.46807],[-81.60289,41.47279]],
-    [[-81.60857,41.46149],[-81.60847,41.46744],[-81.60499,41.46727],[-81.60500,41.46851],[-81.59948,41.46736],
-     [-81.59929,41.45682],[-81.60508,41.45668],[-81.60700,41.45716],[-81.60838,41.45850],[-81.60857,41.46149]],
-    [[-81.62854,41.49989],[-81.61526,41.49928],[-81.61524,41.49347],[-81.61212,41.49348],[-81.61171,41.49320],
-     [-81.61488,41.48831],[-81.62653,41.48822],[-81.62448,41.48927],[-81.62448,41.49008],[-81.62730,41.49007],
-     [-81.62735,41.49342],[-81.62851,41.49341],[-81.62854,41.49989]],
-    [[-81.69365,41.49001],[-81.69225,41.49335],[-81.69102,41.49310],[-81.68720,41.49508],[-81.68239,41.49314],
-     [-81.68162,41.49323],[-81.67385,41.49158],[-81.67067,41.49193],[-81.66822,41.49141],[-81.66944,41.48831],
-     [-81.66672,41.48713],[-81.66568,41.48307],[-81.66555,41.48055],[-81.66598,41.48012],[-81.66510,41.47999],
-     [-81.66104,41.47653],[-81.66231,41.47594],[-81.66316,41.47596],[-81.66192,41.47491],[-81.66193,41.47330],
-     [-81.66241,41.47204],[-81.66468,41.47097],[-81.66793,41.47073],[-81.66793,41.47047],[-81.65990,41.47081],
-     [-81.65955,41.46896],[-81.65818,41.46607],[-81.65754,41.46348],[-81.66413,41.46774],[-81.66902,41.46988],
-     [-81.66896,41.47196],[-81.67002,41.47442],[-81.67153,41.47683],[-81.67565,41.48030],[-81.67741,41.48497],
-     [-81.67985,41.48696],[-81.68079,41.48919],[-81.68174,41.48957],[-81.68731,41.48733],[-81.68818,41.48658],
-     [-81.69004,41.48624],[-81.69227,41.48679],[-81.69323,41.48825],[-81.69365,41.49001]],
-    [[-81.65183,41.50433],[-81.64690,41.50448],[-81.62454,41.50344],[-81.61526,41.50374],[-81.61526,41.49928],
-     [-81.62854,41.49989],[-81.62851,41.49341],[-81.63957,41.49337],[-81.64276,41.49626],[-81.65171,41.49624],
-     [-81.65183,41.50433]],
-    [[-81.79023,41.45558],[-81.78996,41.46373],[-81.78482,41.46469],[-81.78276,41.46537],[-81.78120,41.46872],
-     [-81.78063,41.46922],[-81.76880,41.47400],[-81.76892,41.46186],[-81.79025,41.45503],[-81.79023,41.45558]],
-    [[-81.70490,41.44163],[-81.70288,41.44555],[-81.70009,41.44540],[-81.69986,41.44342],[-81.69900,41.44287],
-     [-81.69791,41.44378],[-81.69657,41.44347],[-81.69585,41.44369],[-81.69345,41.44642],[-81.68910,41.44738],
-     [-81.68743,41.44505],[-81.68689,41.44514],[-81.68339,41.44259],[-81.68225,41.44055],[-81.68503,41.43439],
-     [-81.69243,41.43520],[-81.69243,41.43675],[-81.69844,41.43673],[-81.69930,41.43798],[-81.70490,41.44163]],
-    [[-81.62153,41.44342],[-81.62136,41.45101],[-81.61539,41.44987],[-81.61367,41.44887],[-81.60894,41.44888],
-     [-81.60283,41.44763],[-81.60286,41.44165],[-81.61534,41.44152],[-81.61525,41.43941],[-81.61834,41.44137],
-     [-81.62134,41.44282],[-81.62153,41.44342]],
-    [[-81.59948,41.46736],[-81.58466,41.46435],[-81.58464,41.46086],[-81.59117,41.46084],[-81.59117,41.46166],
-     [-81.59929,41.46161],[-81.59948,41.46736]],
-    [[-81.71039,41.45899],[-81.70405,41.45900],[-81.70398,41.45636],[-81.70099,41.45677],[-81.70174,41.45070],
-     [-81.70504,41.45059],[-81.70504,41.44936],[-81.70642,41.44935],[-81.70657,41.45264],[-81.70778,41.45263],
-     [-81.70781,41.45438],[-81.70721,41.45439],[-81.70725,41.45613],[-81.70604,41.45616],[-81.70626,41.45658],
-     [-81.70725,41.45655],[-81.70729,41.45797],[-81.71038,41.45794],[-81.71039,41.45899]],
-    [[-81.65147,41.44217],[-81.65084,41.44226],[-81.65081,41.44251],[-81.65093,41.44835],[-81.64783,41.44842],
-     [-81.64483,41.44770],[-81.64316,41.44794],[-81.64134,41.44859],[-81.63883,41.44865],[-81.63877,41.44334],
-     [-81.63997,41.43921],[-81.64455,41.43917],[-81.64456,41.44112],[-81.65105,41.44099],[-81.65147,41.44217]],
-    [[-81.69675,41.47064],[-81.69454,41.47962],[-81.69135,41.47965],[-81.69129,41.47607],[-81.68917,41.47607],
-     [-81.68927,41.47741],[-81.68120,41.47753],[-81.68155,41.47634],[-81.67976,41.47662],[-81.67876,41.47493],
-     [-81.67898,41.47436],[-81.67866,41.47411],[-81.68175,41.47021],[-81.69693,41.46996],[-81.69675,41.47064]],
-    [[-81.60287,41.45681],[-81.59116,41.45689],[-81.59113,41.45073],[-81.60285,41.45066],[-81.60287,41.45681]],
-    [[-81.59929,41.45775],[-81.59929,41.46161],[-81.59117,41.46166],[-81.59117,41.46084],[-81.58464,41.46086],
-     [-81.58463,41.45656],[-81.59115,41.45651],[-81.59116,41.45689],[-81.59929,41.45682],[-81.59929,41.45775]],
-    [[-81.69279,41.50698],[-81.67489,41.51593],[-81.67336,41.51346],[-81.67000,41.50346],[-81.66989,41.50227],
-     [-81.68454,41.50058],[-81.68492,41.50196],[-81.68770,41.50513],[-81.69000,41.50393],[-81.69279,41.50698]],
-    [[-81.81173,41.43384],[-81.80847,41.43779],[-81.80676,41.43839],[-81.80401,41.43880],[-81.79333,41.43849],
-     [-81.79059,41.43900],[-81.79069,41.43353],[-81.81173,41.43384]],
-    [[-81.73036,41.49212],[-81.73022,41.49936],[-81.71481,41.50730],[-81.70890,41.49972],[-81.70807,41.49908],
-     [-81.70913,41.49780],[-81.71191,41.49731],[-81.71329,41.49451],[-81.71376,41.49337],[-81.71164,41.49059],
-     [-81.70928,41.49167],[-81.70846,41.49278],[-81.70737,41.49142],[-81.70329,41.49401],[-81.70461,41.49075],
-     [-81.70388,41.48959],[-81.70161,41.48841],[-81.70048,41.48829],[-81.70047,41.48766],[-81.69779,41.48835],
-     [-81.69569,41.48804],[-81.69447,41.48726],[-81.69469,41.48440],[-81.69777,41.48440],[-81.69783,41.48663],
-     [-81.70620,41.48293],[-81.71348,41.48034],[-81.71650,41.48413],[-81.71650,41.48547],[-81.71769,41.48516],
-     [-81.71769,41.48800],[-81.71687,41.48840],[-81.71845,41.48881],[-81.71773,41.48909],[-81.71771,41.49151],
-     [-81.72345,41.49148],[-81.72583,41.49073],[-81.72677,41.49130],[-81.73028,41.48994],[-81.73036,41.49212]],
-    [[-81.60283,41.44200],[-81.60283,41.44788],[-81.57977,41.44300],[-81.57975,41.43864],[-81.58178,41.43862],
-     [-81.58176,41.43505],[-81.58454,41.43505],[-81.58454,41.44178],[-81.60286,41.44165],[-81.60283,41.44200]],
-    [[-81.80477,41.45889],[-81.80444,41.46092],[-81.79998,41.46413],[-81.79732,41.46853],[-81.79732,41.46993],
-     [-81.79095,41.47012],[-81.78903,41.47045],[-81.78306,41.47049],[-81.78045,41.46931],[-81.78120,41.46872],
-     [-81.78276,41.46537],[-81.78482,41.46469],[-81.78996,41.46373],[-81.79221,41.46283],[-81.79896,41.45867],
-     [-81.80227,41.45556],[-81.80477,41.45889]],
-    [[-81.80499,41.45301],[-81.79896,41.45867],[-81.79221,41.46283],[-81.78996,41.46373],[-81.79025,41.45503],
-     [-81.80589,41.45216],[-81.80499,41.45301]],
-    [[-81.72810,41.41870],[-81.71293,41.43178],[-81.70693,41.43903],[-81.70685,41.43249],[-81.70977,41.42522],
-     [-81.70969,41.42205],[-81.71021,41.41891],[-81.72810,41.41870]],
-    [[-81.60890,41.54505],[-81.60885,41.54576],[-81.60738,41.54795],[-81.60222,41.55002],[-81.60139,41.54825],
-     [-81.60102,41.54134],[-81.60327,41.54134],[-81.60890,41.54049],[-81.60890,41.54505]],
-    [[-81.70438,41.49158],[-81.70213,41.49636],[-81.69886,41.49708],[-81.69952,41.49787],[-81.69614,41.49958],
-     [-81.69693,41.50044],[-81.68770,41.50513],[-81.68492,41.50196],[-81.68454,41.50058],[-81.66989,41.50227],
-     [-81.67055,41.50055],[-81.67177,41.49938],[-81.67954,41.49544],[-81.67872,41.49383],[-81.67770,41.49312],
-     [-81.67794,41.49243],[-81.68319,41.49334],[-81.68720,41.49508],[-81.69122,41.49305],[-81.69225,41.49335],
-     [-81.69183,41.49411],[-81.69259,41.49500],[-81.69545,41.49489],[-81.69905,41.49379],[-81.69978,41.49215],
-     [-81.69880,41.48953],[-81.70002,41.48824],[-81.70161,41.48841],[-81.70388,41.48959],[-81.70461,41.49075],
-     [-81.70438,41.49158]],
-    [[-81.63722,41.52296],[-81.63359,41.52296],[-81.63361,41.52784],[-81.63021,41.52782],[-81.62826,41.52841],
-     [-81.62621,41.52579],[-81.62236,41.52283],[-81.62119,41.52117],[-81.63718,41.51945],[-81.63722,41.52296]],
-    [[-81.63310,41.48616],[-81.62963,41.48671],[-81.62653,41.48822],[-81.61488,41.48831],[-81.62152,41.47574],
-     [-81.62141,41.45911],[-81.62900,41.45922],[-81.62944,41.46452],[-81.63000,41.46500],[-81.63306,41.46604],
-     [-81.63273,41.46706],[-81.63273,41.47850],[-81.63310,41.48616]],
-    [[-81.62784,41.52819],[-81.62777,41.52875],[-81.62740,41.52889],[-81.62647,41.52841],[-81.61553,41.52856],
-     [-81.61547,41.52169],[-81.62119,41.52117],[-81.62236,41.52283],[-81.62621,41.52579],[-81.62784,41.52819]],
-    [[-81.76891,41.46269],[-81.76881,41.47555],[-81.75970,41.47895],[-81.75886,41.47794],[-81.75872,41.46832],
-     [-81.75974,41.46816],[-81.75975,41.46711],[-81.75872,41.46720],[-81.75871,41.46522],[-81.76892,41.46186],
-     [-81.76891,41.46269]],
-    [[-81.75598,41.48037],[-81.74488,41.48453],[-81.74323,41.48411],[-81.74320,41.48069],[-81.75344,41.47972],
-     [-81.75598,41.48037]],
-    [[-81.75410,41.47757],[-81.75409,41.47988],[-81.75344,41.47972],[-81.74341,41.48063],[-81.74340,41.47714],
-     [-81.74188,41.47715],[-81.74191,41.47075],[-81.74857,41.47046],[-81.74854,41.47711],[-81.75413,41.47707],
-     [-81.75410,41.47757]],
-    [[-81.63049,41.45115],[-81.62919,41.45168],[-81.62788,41.45153],[-81.62809,41.45559],[-81.62900,41.45922],
-     [-81.62141,41.45911],[-81.62140,41.45723],[-81.60832,41.45730],[-81.60768,41.45761],[-81.60585,41.45676],
-     [-81.60287,41.45681],[-81.60283,41.44763],[-81.60894,41.44888],[-81.61367,41.44887],[-81.61539,41.44987],
-     [-81.62136,41.45101],[-81.62150,41.44360],[-81.62184,41.44409],[-81.62313,41.44453],[-81.63049,41.45115]],
-    [[-81.65186,41.51398],[-81.64575,41.51402],[-81.64572,41.51102],[-81.64448,41.51102],[-81.64443,41.50681],
-     [-81.64217,41.50688],[-81.64211,41.50427],[-81.64929,41.50451],[-81.65183,41.50433],[-81.65186,41.51398]],
-    [[-81.65190,41.51790],[-81.63987,41.51916],[-81.63899,41.51831],[-81.63358,41.51848],[-81.63362,41.51747],
-     [-81.63305,41.51741],[-81.63306,41.51662],[-81.63679,41.51656],[-81.63731,41.51629],[-81.63627,41.51511],
-     [-81.63679,41.51483],[-81.63962,41.51483],[-81.63960,41.51416],[-81.64126,41.51415],[-81.64125,41.51574],
-     [-81.64536,41.51572],[-81.64579,41.51568],[-81.64575,41.51402],[-81.65186,41.51398],[-81.65190,41.51790]],
-    [[-81.62103,41.54242],[-81.60291,41.55074],[-81.60222,41.55002],[-81.60718,41.54807],[-81.60787,41.54743],
-     [-81.60885,41.54576],[-81.60890,41.54049],[-81.61312,41.53988],[-81.62078,41.53640],[-81.62103,41.54242]],
-    [[-81.75166,41.48688],[-81.74985,41.49055],[-81.74986,41.49405],[-81.73022,41.49936],[-81.73028,41.48994],
-     [-81.74488,41.48453],[-81.75202,41.48584],[-81.75166,41.48688]],
-    [[-81.59830,41.48383],[-81.59830,41.48421],[-81.59541,41.48419],[-81.59569,41.48781],[-81.59188,41.48737],
-     [-81.59189,41.48414],[-81.59113,41.48410],[-81.59110,41.48343],[-81.59042,41.48331],[-81.59040,41.48238],
-     [-81.59177,41.48244],[-81.59195,41.47800],[-81.59486,41.47800],[-81.59513,41.48317],[-81.59771,41.48317],
-     [-81.59830,41.48342],[-81.59830,41.48383]],
-    [[-81.67954,41.49544],[-81.67390,41.49827],[-81.67375,41.49725],[-81.65883,41.49656],[-81.66007,41.49317],
-     [-81.66714,41.49435],[-81.66822,41.49141],[-81.67067,41.49193],[-81.67385,41.49158],[-81.67794,41.49243],
-     [-81.67770,41.49312],[-81.67872,41.49383],[-81.67954,41.49544]],
-    [[-81.73910,41.46269],[-81.73832,41.46368],[-81.73569,41.47114],[-81.73175,41.47188],[-81.72368,41.47474],
-     [-81.72146,41.47515],[-81.71648,41.47528],[-81.71649,41.46966],[-81.72000,41.46965],[-81.72005,41.46241],
-     [-81.73016,41.46231],[-81.73167,41.45957],[-81.73455,41.46103],[-81.73910,41.46269]],
-    [[-81.62152,41.47574],[-81.61783,41.48281],[-81.61442,41.48221],[-81.61425,41.47227],[-81.61296,41.47243],
-     [-81.61215,41.47155],[-81.61040,41.47133],[-81.60967,41.47061],[-81.60934,41.46942],[-81.62150,41.47196],
-     [-81.62152,41.47574]],
-    [[-81.69844,41.43673],[-81.69243,41.43675],[-81.69243,41.43520],[-81.68761,41.43468],[-81.68737,41.42552],
-     [-81.68784,41.42477],[-81.68783,41.42199],[-81.69321,41.42110],[-81.69572,41.42113],[-81.69692,41.42480],
-     [-81.69741,41.43065],[-81.69713,41.43485],[-81.69844,41.43673]],
-    [[-81.60645,41.53004],[-81.59821,41.52997],[-81.59804,41.52030],[-81.59839,41.51989],[-81.59781,41.51954],
-     [-81.59832,41.51873],[-81.59793,41.51850],[-81.59862,41.51790],[-81.59980,41.51798],[-81.60114,41.51711],
-     [-81.60473,41.51709],[-81.60484,41.52283],[-81.60560,41.52275],[-81.60560,41.52803],[-81.60613,41.52864],
-     [-81.60645,41.53004]],
-    [[-81.59197,41.47982],[-81.59177,41.48244],[-81.59040,41.48238],[-81.59042,41.48331],[-81.59110,41.48343],
-     [-81.59113,41.48410],[-81.59189,41.48414],[-81.59188,41.48737],[-81.58487,41.48667],[-81.58504,41.48560],
-     [-81.58448,41.48539],[-81.58499,41.48420],[-81.58407,41.48338],[-81.58479,41.48347],[-81.58459,41.48061],
-     [-81.58503,41.48032],[-81.58474,41.47905],[-81.59039,41.47965],[-81.59039,41.47799],[-81.59195,41.47800],
-     [-81.59197,41.47982]],
-    [[-81.60289,41.47361],[-81.60288,41.47804],[-81.59195,41.47800],[-81.59187,41.47283],[-81.60289,41.47279],
-     [-81.60289,41.47361]],
-    [[-81.59115,41.45203],[-81.59115,41.45651],[-81.58463,41.45656],[-81.58456,41.45072],[-81.58403,41.45071],
-     [-81.58403,41.44909],[-81.59113,41.44901],[-81.59115,41.45203]],
-    [[-81.71376,41.49337],[-81.71191,41.49731],[-81.70913,41.49780],[-81.70807,41.49908],[-81.70541,41.49868],
-     [-81.70282,41.49729],[-81.70201,41.49619],[-81.70329,41.49401],[-81.70737,41.49142],[-81.70846,41.49278],
-     [-81.70928,41.49167],[-81.71164,41.49059],[-81.71376,41.49337]],
-    [[-81.65098,41.45170],[-81.64996,41.45172],[-81.64996,41.45247],[-81.64491,41.45258],[-81.64495,41.45607],
-     [-81.64016,41.45622],[-81.64019,41.45874],[-81.63971,41.45902],[-81.63896,41.45838],[-81.63883,41.44865],
-     [-81.64134,41.44859],[-81.64316,41.44794],[-81.64483,41.44770],[-81.64783,41.44842],[-81.65093,41.44835],
-     [-81.65098,41.45170]],
-    [[-81.72002,41.46412],[-81.72000,41.46965],[-81.71333,41.46970],[-81.71322,41.46249],[-81.72005,41.46241],
-     [-81.72002,41.46412]],
-    [[-81.61443,41.47991],[-81.61442,41.48221],[-81.60291,41.48100],[-81.60286,41.46807],[-81.60934,41.46942],
-     [-81.60967,41.47061],[-81.61040,41.47133],[-81.61215,41.47155],[-81.61296,41.47243],[-81.61425,41.47227],
-     [-81.61443,41.47991]],
-    [[-81.56485,41.42455],[-81.56479,41.44014],[-81.55560,41.43766],[-81.55531,41.43573],[-81.55172,41.43436],
-     [-81.55226,41.43135],[-81.55195,41.42708],[-81.55464,41.42708],[-81.55428,41.42434],[-81.56488,41.42431],
-     [-81.56485,41.42455]],
-    [[-81.76880,41.47691],[-81.76874,41.48517],[-81.75475,41.48086],[-81.76881,41.47555],[-81.76880,41.47691]],
-    [[-81.63682,41.51575],[-81.62124,41.51583],[-81.62186,41.51512],[-81.62182,41.51034],[-81.62708,41.50938],
-     [-81.63032,41.50586],[-81.63071,41.50591],[-81.63072,41.50932],[-81.63357,41.50931],[-81.63366,41.51225],
-     [-81.63682,41.51575]],
-    [[-81.80822,41.43809],[-81.79480,41.45418],[-81.79025,41.45503],[-81.79059,41.43900],[-81.79394,41.43847],
-     [-81.80476,41.43877],[-81.80847,41.43779],[-81.80822,41.43809]],
-    [[-81.60102,41.54134],[-81.59744,41.54132],[-81.59148,41.54481],[-81.59143,41.53044],[-81.59462,41.53039],
-     [-81.59933,41.53470],[-81.60074,41.53769],[-81.60102,41.54134]],
-    [[-81.57026,41.58841],[-81.56730,41.59083],[-81.56201,41.58801],[-81.55133,41.58372],[-81.54442,41.57710],
-     [-81.54888,41.57478],[-81.55052,41.57612],[-81.55276,41.57498],[-81.55335,41.57566],[-81.55124,41.57673],
-     [-81.55166,41.57706],[-81.55899,41.57337],[-81.56357,41.57198],[-81.56369,41.57220],[-81.56419,41.57208],
-     [-81.56422,41.57701],[-81.56198,41.57704],[-81.56206,41.58071],[-81.56430,41.58273],[-81.56735,41.58448],
-     [-81.56704,41.58495],[-81.57122,41.58763],[-81.57026,41.58841]],
-    [[-81.70286,41.44567],[-81.70196,41.44924],[-81.70099,41.45677],[-81.69870,41.45749],[-81.69665,41.45855],
-     [-81.69416,41.46130],[-81.69401,41.46018],[-81.69090,41.45734],[-81.68948,41.45650],[-81.68773,41.45303],
-     [-81.68781,41.45071],[-81.68230,41.44898],[-81.68328,41.44891],[-81.68465,41.44752],[-81.68436,41.44586],
-     [-81.68583,41.44661],[-81.68667,41.44616],[-81.68910,41.44738],[-81.69038,41.44693],[-81.69240,41.44677],
-     [-81.69404,41.44606],[-81.69585,41.44369],[-81.69657,41.44347],[-81.69791,41.44378],[-81.69900,41.44287],
-     [-81.69986,41.44342],[-81.70009,41.44540],[-81.70286,41.44567]],
-    [[-81.58466,41.46435],[-81.57875,41.46439],[-81.57854,41.45301],[-81.58460,41.45298],[-81.58466,41.46435]],
-    [[-81.75974,41.46816],[-81.75872,41.46832],[-81.75886,41.47794],[-81.75970,41.47895],[-81.75598,41.48037],
-     [-81.75409,41.47988],[-81.75419,41.46963],[-81.75838,41.46802],[-81.75974,41.46771],[-81.75974,41.46816]],
-    [[-81.61709,41.47050],[-81.61694,41.47099],[-81.60500,41.46851],[-81.60499,41.46727],[-81.60847,41.46744],
-     [-81.60857,41.45916],[-81.60768,41.45761],[-81.60815,41.45733],[-81.61328,41.45726],[-81.61325,41.46358],
-     [-81.61470,41.46356],[-81.61471,41.46830],[-81.61653,41.46950],[-81.61709,41.47050]],
-    [[-81.75948,41.44919],[-81.75944,41.45180],[-81.75894,41.45292],[-81.75865,41.46524],[-81.75420,41.46669],
-     [-81.75329,41.46645],[-81.75340,41.45582],[-81.74846,41.45562],[-81.75942,41.44844],[-81.75948,41.44919]],
-    [[-81.57544,41.55327],[-81.56425,41.56192],[-81.56388,41.56150],[-81.56381,41.55969],[-81.56269,41.55964],
-     [-81.55993,41.55659],[-81.57111,41.54506],[-81.57534,41.54521],[-81.57544,41.55327]],
-    [[-81.60291,41.48388],[-81.60291,41.48424],[-81.59830,41.48421],[-81.59830,41.48342],[-81.59771,41.48317],
-     [-81.59513,41.48317],[-81.59486,41.47800],[-81.60288,41.47804],[-81.60291,41.48388]],
-    [[-81.73028,41.48447],[-81.73028,41.48994],[-81.72677,41.49130],[-81.72583,41.49073],[-81.72345,41.49148],
-     [-81.71771,41.49151],[-81.71773,41.48909],[-81.71845,41.48881],[-81.71687,41.48840],[-81.71765,41.48809],
-     [-81.71770,41.48732],[-81.72246,41.48609],[-81.72245,41.48064],[-81.72126,41.48064],[-81.72127,41.47756],
-     [-81.73015,41.47464],[-81.73028,41.48447]],
-    [[-81.57308,41.45756],[-81.57251,41.45755],[-81.57250,41.45716],[-81.55550,41.45721],[-81.55506,41.44982],
-     [-81.57304,41.44975],[-81.57308,41.45756]],
-    [[-81.60286,41.44977],[-81.60285,41.45066],[-81.59113,41.45073],[-81.59113,41.44901],[-81.58403,41.44909],
-     [-81.58400,41.44534],[-81.57977,41.44420],[-81.57977,41.44300],[-81.60283,41.44788],[-81.60286,41.44977]],
-    [[-81.73436,41.42096],[-81.73437,41.42384],[-81.72854,41.42391],[-81.72858,41.43034],[-81.72688,41.43034],
-     [-81.72690,41.43218],[-81.71263,41.43214],[-81.72810,41.41870],[-81.73444,41.41864],[-81.73436,41.42096]],
-    [[-81.81559,41.46763],[-81.81525,41.46805],[-81.81040,41.46800],[-81.81076,41.46957],[-81.81036,41.46994],
-     [-81.80474,41.47015],[-81.79732,41.46993],[-81.79732,41.46853],[-81.79998,41.46413],[-81.80444,41.46092],
-     [-81.80477,41.45889],[-81.80523,41.45876],[-81.80712,41.45939],[-81.81373,41.46274],[-81.81371,41.46579],
-     [-81.81559,41.46763]],
-    [[-81.70693,41.43903],[-81.70473,41.44158],[-81.69930,41.43798],[-81.69713,41.43485],[-81.69724,41.43260],
-     [-81.70685,41.43249],[-81.70693,41.43903]],
-    [[-81.56043,41.54988],[-81.54779,41.55855],[-81.54413,41.55604],[-81.54386,41.55260],[-81.54284,41.55158],
-     [-81.54050,41.55106],[-81.53897,41.54994],[-81.53856,41.54913],[-81.53683,41.54851],[-81.53274,41.54535],
-     [-81.54449,41.54542],[-81.54637,41.54649],[-81.54638,41.54509],[-81.55612,41.54523],[-81.55679,41.54540],
-     [-81.55650,41.54578],[-81.55665,41.54778],[-81.55692,41.54796],[-81.55831,41.54662],[-81.55860,41.54789],
-     [-81.56085,41.54959],[-81.56043,41.54988]],
-    [[-81.71718,41.44924],[-81.71608,41.45290],[-81.71238,41.45902],[-81.71039,41.45899],[-81.71038,41.45794],
-     [-81.70729,41.45797],[-81.70725,41.45655],[-81.70626,41.45658],[-81.70604,41.45616],[-81.70725,41.45613],
-     [-81.70721,41.45439],[-81.70781,41.45438],[-81.70778,41.45263],[-81.70657,41.45264],[-81.70642,41.44935],
-     [-81.70504,41.44936],[-81.70504,41.45059],[-81.70174,41.45070],[-81.70290,41.44549],[-81.70408,41.44536],
-     [-81.70939,41.44740],[-81.71187,41.44733],[-81.71600,41.44813],[-81.71711,41.44869],[-81.71718,41.44924]],
-    [[-81.61555,41.53164],[-81.61554,41.53875],[-81.61312,41.53988],[-81.60890,41.54049],[-81.60586,41.52833],
-     [-81.60938,41.52831],[-81.60937,41.52957],[-81.61554,41.52957],[-81.61555,41.53164]],
-    [[-81.67202,41.50994],[-81.66681,41.51201],[-81.66439,41.50912],[-81.65933,41.51053],[-81.65874,41.50756],
-     [-81.65497,41.50797],[-81.65570,41.51159],[-81.65304,41.51231],[-81.65630,41.51620],[-81.65190,41.51790],
-     [-81.65183,41.50433],[-81.66989,41.50227],[-81.67202,41.50994]],
-    [[-81.61554,41.52957],[-81.60937,41.52957],[-81.60938,41.52831],[-81.60586,41.52833],[-81.60560,41.52803],
-     [-81.60560,41.52275],[-81.61547,41.52169],[-81.61554,41.52957]],
-    [[-81.82123,41.43608],[-81.82064,41.43710],[-81.81885,41.44314],[-81.81041,41.44309],[-81.81033,41.44602],
-     [-81.80245,41.44591],[-81.80143,41.44681],[-81.80141,41.44620],[-81.81173,41.43384],[-81.82255,41.43403],
-     [-81.82123,41.43608]],
-    [[-81.71188,41.45987],[-81.70822,41.46574],[-81.70739,41.46545],[-81.70306,41.46550],[-81.70317,41.46987],
-     [-81.69693,41.46996],[-81.70009,41.45800],[-81.70090,41.45679],[-81.70398,41.45636],[-81.70405,41.45900],
-     [-81.71238,41.45902],[-81.71188,41.45987]],
-    [[-81.57534,41.56832],[-81.57510,41.57009],[-81.57531,41.57505],[-81.56839,41.57491],[-81.56839,41.57571],
-     [-81.56420,41.57576],[-81.56419,41.57208],[-81.56369,41.57220],[-81.56357,41.57198],[-81.57541,41.56789],
-     [-81.57534,41.56832]],
-    [[-81.68412,41.45516],[-81.68265,41.46094],[-81.67935,41.46412],[-81.67755,41.46471],[-81.67403,41.46499],
-     [-81.67304,41.46546],[-81.67068,41.46765],[-81.66902,41.46988],[-81.66413,41.46774],[-81.65715,41.46330],
-     [-81.65545,41.46299],[-81.65343,41.46303],[-81.65032,41.46392],[-81.64687,41.46305],[-81.64864,41.46173],
-     [-81.64863,41.46042],[-81.64986,41.46041],[-81.64996,41.45172],[-81.65098,41.45170],[-81.65096,41.45103],
-     [-81.65194,41.45103],[-81.65407,41.45235],[-81.65399,41.45317],[-81.65704,41.45314],[-81.65713,41.45576],
-     [-81.68150,41.45506],[-81.68110,41.45105],[-81.68024,41.45063],[-81.68103,41.44902],[-81.68289,41.45193],
-     [-81.68412,41.45516]],
-    [[-81.65234,41.54159],[-81.63528,41.54660],[-81.63329,41.54818],[-81.63145,41.54806],[-81.63101,41.54767],
-     [-81.62648,41.54867],[-81.62646,41.54547],[-81.62702,41.54516],[-81.62701,41.54030],[-81.62790,41.53990],
-     [-81.62889,41.53994],[-81.63100,41.54121],[-81.63189,41.54069],[-81.63141,41.53848],[-81.62993,41.53650],
-     [-81.62981,41.53525],[-81.63041,41.53339],[-81.62910,41.53104],[-81.62832,41.52830],[-81.63021,41.52782],
-     [-81.63361,41.52784],[-81.63361,41.53057],[-81.65024,41.52304],[-81.64889,41.52128],[-81.64888,41.51824],
-     [-81.65190,41.51790],[-81.65234,41.54159]],
-    [[-81.66941,41.48840],[-81.66714,41.49435],[-81.65771,41.49278],[-81.66043,41.48440],[-81.65530,41.48200],
-     [-81.65831,41.48235],[-81.66030,41.48302],[-81.66645,41.48626],[-81.66697,41.48734],[-81.66941,41.48840]],
-    [[-81.58479,41.47180],[-81.57767,41.47182],[-81.57693,41.47121],[-81.57706,41.47066],[-81.57673,41.47038],
-     [-81.57686,41.46545],[-81.57242,41.46522],[-81.57241,41.46441],[-81.58466,41.46435],[-81.58479,41.47180]],
-    [[-81.58179,41.43747],[-81.58178,41.43862],[-81.57975,41.43864],[-81.57977,41.44420],[-81.56479,41.44014],
-     [-81.56488,41.42431],[-81.56794,41.42428],[-81.56809,41.42968],[-81.57064,41.42988],[-81.57067,41.43128],
-     [-81.57480,41.43138],[-81.57478,41.43100],[-81.57785,41.43099],[-81.57785,41.43034],[-81.58059,41.43051],
-     [-81.58067,41.43496],[-81.58176,41.43505],[-81.58179,41.43747]],
-    [[-81.59285,41.57280],[-81.57603,41.58395],[-81.57512,41.57869],[-81.57458,41.57857],[-81.57386,41.57774],
-     [-81.57538,41.57682],[-81.57510,41.57009],[-81.57541,41.56789],[-81.58137,41.56668],[-81.58525,41.56664],
-     [-81.58525,41.56779],[-81.58617,41.56849],[-81.58660,41.56817],[-81.59285,41.57280]],
-    [[-81.61738,41.48368],[-81.61385,41.49024],[-81.61171,41.49320],[-81.61212,41.49348],[-81.61524,41.49347],
-     [-81.61526,41.49780],[-81.60971,41.49785],[-81.60962,41.49726],[-81.60726,41.49846],[-81.60585,41.49986],
-     [-81.60317,41.49958],[-81.60320,41.49508],[-81.60170,41.49475],[-81.60146,41.49346],[-81.60157,41.49041],
-     [-81.60293,41.48681],[-81.60291,41.48100],[-81.61658,41.48241],[-81.61783,41.48281],[-81.61738,41.48368]],
-    [[-81.62150,41.47006],[-81.62150,41.47196],[-81.61694,41.47099],[-81.61685,41.46981],[-81.61471,41.46830],
-     [-81.61470,41.46356],[-81.61325,41.46358],[-81.61328,41.45726],[-81.62140,41.45723],[-81.62150,41.47006]],
-    [[-81.65151,41.48187],[-81.63641,41.48589],[-81.63310,41.48616],[-81.63275,41.47299],[-81.63749,41.47300],
-     [-81.64010,41.47361],[-81.64179,41.47495],[-81.64237,41.47610],[-81.64251,41.47989],[-81.64363,41.48053],
-     [-81.64723,41.48145],[-81.64878,41.48092],[-81.65147,41.48053],[-81.65151,41.48187]],
-    [[-81.84548,41.43879],[-81.84437,41.44188],[-81.84363,41.44251],[-81.83942,41.44217],[-81.83387,41.44001],
-     [-81.83137,41.44078],[-81.82966,41.44313],[-81.83126,41.44520],[-81.83176,41.44707],[-81.83136,41.44845],
-     [-81.83208,41.45205],[-81.83142,41.45238],[-81.82985,41.45214],[-81.82819,41.45099],[-81.82836,41.45055],
-     [-81.82726,41.45027],[-81.82709,41.44982],[-81.82526,41.44929],[-81.82276,41.44917],[-81.82199,41.44938],
-     [-81.82244,41.44908],[-81.82376,41.44425],[-81.81855,41.44418],[-81.82064,41.43710],[-81.82255,41.43403],
-     [-81.83862,41.43425],[-81.84129,41.43581],[-81.84177,41.43630],[-81.84220,41.43778],[-81.84283,41.43796],
-     [-81.84528,41.43771],[-81.84548,41.43879]],
-    [[-81.57559,41.56671],[-81.57541,41.56789],[-81.56680,41.57098],[-81.55899,41.57337],[-81.55166,41.57706],
-     [-81.55124,41.57673],[-81.55335,41.57566],[-81.55276,41.57498],[-81.55052,41.57612],[-81.54888,41.57478],
-     [-81.55826,41.56934],[-81.56609,41.56579],[-81.57554,41.56259],[-81.57559,41.56671]],
-    [[-81.79939,41.42002],[-81.76917,41.44123],[-81.76953,41.41841],[-81.78094,41.41845],[-81.78036,41.42010],
-     [-81.78031,41.42172],[-81.79394,41.42174],[-81.79666,41.42111],[-81.79903,41.41985],[-81.79958,41.41987],
-     [-81.79939,41.42002]],
-    [[-81.75420,41.46669],[-81.74883,41.46846],[-81.74869,41.46220],[-81.74965,41.46221],[-81.74981,41.45577],
-     [-81.75340,41.45582],[-81.75329,41.46645],[-81.75420,41.46669]],
-    [[-81.63189,41.54069],[-81.63100,41.54121],[-81.62889,41.53994],[-81.62790,41.53990],[-81.62701,41.54030],
-     [-81.62698,41.53945],[-81.62100,41.54234],[-81.62078,41.53640],[-81.62847,41.53291],[-81.62775,41.53174],
-     [-81.62753,41.53001],[-81.62647,41.52841],[-81.62753,41.52887],[-81.62795,41.52807],[-81.62872,41.52914],
-     [-81.62926,41.53141],[-81.63035,41.53308],[-81.62979,41.53598],[-81.63014,41.53694],[-81.63141,41.53848],
-     [-81.63189,41.54069]],
-    [[-81.83090,41.42021],[-81.83006,41.42205],[-81.82255,41.43403],[-81.81173,41.43384],[-81.82446,41.41868],
-     [-81.83080,41.41839],[-81.83090,41.42021]],
-    [[-81.65171,41.49557],[-81.65171,41.49624],[-81.64276,41.49626],[-81.63957,41.49337],[-81.62735,41.49342],
-     [-81.62730,41.49007],[-81.62448,41.49008],[-81.62448,41.48927],[-81.63016,41.48656],[-81.63641,41.48589],
-     [-81.65151,41.48187],[-81.65171,41.49557]],
-    [[-81.62847,41.53291],[-81.61554,41.53875],[-81.61553,41.52856],[-81.62647,41.52841],[-81.62753,41.53001],
-     [-81.62775,41.53174],[-81.62847,41.53291]],
-    [[-81.56484,41.44979],[-81.54561,41.44986],[-81.54567,41.44241],[-81.55545,41.44247],[-81.55560,41.43766],
-     [-81.56479,41.44014],[-81.56484,41.44979]],
-    [[-81.70048,41.48793],[-81.70048,41.48829],[-81.70002,41.48824],[-81.69880,41.48953],[-81.69978,41.49215],
-     [-81.69905,41.49379],[-81.69545,41.49489],[-81.69259,41.49500],[-81.69183,41.49411],[-81.69311,41.49183],
-     [-81.69365,41.49001],[-81.69323,41.48825],[-81.69227,41.48679],[-81.69004,41.48624],[-81.68818,41.48658],
-     [-81.68731,41.48733],[-81.68340,41.48902],[-81.68174,41.48957],[-81.68079,41.48919],[-81.67985,41.48696],
-     [-81.67741,41.48497],[-81.67565,41.48030],[-81.67374,41.47860],[-81.67562,41.47801],[-81.67866,41.47411],
-     [-81.67898,41.47436],[-81.67876,41.47493],[-81.67976,41.47662],[-81.68155,41.47634],[-81.68120,41.47753],
+    [1,2,[[-81.75598,41.48037],[-81.75345,41.47972],[-81.74320,41.48069],[-81.74323,41.48411],
+     [-81.74488,41.48453],[-81.75598,41.48037]]],
+    [2,3,[[-81.76903,41.49733],[-81.76891,41.49166],[-81.76858,41.49164],[-81.76874,41.48517],
+     [-81.75475,41.48086],[-81.74488,41.48453],[-81.75201,41.48584],[-81.74985,41.49055],[-81.74986,41.49405],
+     [-81.75049,41.49387],[-81.75048,41.49420],[-81.75652,41.49476],[-81.76903,41.49733]]],
+    [1,3,[[-81.75166,41.48688],[-81.75201,41.48584],[-81.74323,41.48411],[-81.74320,41.48069],
+     [-81.73575,41.48262],[-81.73575,41.48155],[-81.73027,41.48298],[-81.73022,41.49936],[-81.74986,41.49405],
+     [-81.74985,41.49055],[-81.75166,41.48688]]],
+    [1,3,[[-81.76880,41.47691],[-81.76881,41.47555],[-81.75475,41.48086],[-81.76874,41.48517],
+     [-81.76880,41.47691]]],
+    [2,3,[[-81.76891,41.46269],[-81.76892,41.46186],[-81.75871,41.46522],[-81.75872,41.46720],
+     [-81.75975,41.46711],[-81.75974,41.46816],[-81.75872,41.46832],[-81.75886,41.47794],[-81.75970,41.47895],
+     [-81.76881,41.47555],[-81.76891,41.46269]]],
+    [1,3,[[-81.75974,41.46816],[-81.75974,41.46771],[-81.75805,41.46800],[-81.75250,41.46982],
+     [-81.75286,41.47011],[-81.75419,41.46964],[-81.75410,41.47988],[-81.75598,41.48037],[-81.75970,41.47895],
+     [-81.75886,41.47794],[-81.75872,41.46832],[-81.75974,41.46816]]],
+    [0,2,[[-81.75974,41.46728],[-81.75872,41.46720],[-81.75871,41.46522],[-81.74743,41.46891],
+     [-81.74559,41.47009],[-81.75103,41.47006],[-81.75103,41.47046],[-81.74857,41.47046],[-81.74854,41.47711],
+     [-81.75413,41.47707],[-81.75419,41.46964],[-81.75286,41.47011],[-81.75250,41.46982],[-81.75699,41.46826],
+     [-81.75974,41.46771],[-81.75974,41.46728]]],
+    [2,2,[[-81.75410,41.47757],[-81.75413,41.47707],[-81.74854,41.47711],[-81.74857,41.47046],
+     [-81.75103,41.47046],[-81.75103,41.47006],[-81.74559,41.47009],[-81.74459,41.47053],[-81.74192,41.47075],
+     [-81.74188,41.47715],[-81.74340,41.47714],[-81.74341,41.48063],[-81.75345,41.47972],[-81.75410,41.47988],
+     [-81.75410,41.47757]]],
+    [1,2,[[-81.74545,41.47020],[-81.74114,41.47028],[-81.73574,41.47100],[-81.73488,41.47308],
+     [-81.73480,41.47719],[-81.73581,41.47719],[-81.73575,41.48262],[-81.74341,41.48063],[-81.74340,41.47714],
+     [-81.74188,41.47715],[-81.74192,41.47075],[-81.74459,41.47053],[-81.74545,41.47020]]],
+    [1,2,[[-81.73579,41.47809],[-81.73581,41.47719],[-81.73480,41.47719],[-81.73488,41.47308],
+     [-81.73574,41.47100],[-81.73015,41.47241],[-81.73027,41.48298],[-81.73575,41.48155],[-81.73579,41.47809]]],
+    [2,3,[[-81.76897,41.45722],[-81.76898,41.45638],[-81.75885,41.45626],[-81.75865,41.46524],
+     [-81.76892,41.46186],[-81.76897,41.45722]]],
+    [2,3,[[-81.76905,41.44910],[-81.76873,41.44814],[-81.76680,41.44659],[-81.76375,41.44881],
+     [-81.76324,41.44856],[-81.76316,41.44739],[-81.76442,41.44624],[-81.76394,41.44498],[-81.75942,41.44844],
+     [-81.75944,41.45180],[-81.75894,41.45292],[-81.75885,41.45626],[-81.76898,41.45638],[-81.76905,41.44910]]],
+    [2,3,[[-81.75948,41.44919],[-81.75942,41.44844],[-81.74846,41.45562],[-81.75340,41.45582],
+     [-81.75329,41.46645],[-81.75420,41.46669],[-81.75865,41.46524],[-81.75894,41.45292],[-81.75944,41.45180],
+     [-81.75948,41.44919]]],
+    [2,2,[[-81.75420,41.46669],[-81.75329,41.46645],[-81.75340,41.45582],[-81.74981,41.45577],
+     [-81.74965,41.46221],[-81.74869,41.46219],[-81.74883,41.46846],[-81.75420,41.46669]]],
+    [1,3,[[-81.74969,41.45585],[-81.74846,41.45562],[-81.73858,41.46252],[-81.73910,41.46269],
+     [-81.73802,41.46463],[-81.74139,41.46485],[-81.74141,41.46337],[-81.74661,41.46476],[-81.74662,41.46216],
+     [-81.74965,41.46221],[-81.74969,41.45585]]],
+    [1,2,[[-81.74886,41.46620],[-81.74869,41.46219],[-81.74662,41.46216],[-81.74661,41.46476],
+     [-81.74141,41.46337],[-81.74139,41.46485],[-81.73802,41.46463],[-81.73574,41.47100],[-81.74114,41.47028],
+     [-81.74559,41.47009],[-81.74672,41.46923],[-81.74883,41.46846],[-81.74886,41.46620]]],
+    [1,1,[[-81.73910,41.46269],[-81.73455,41.46103],[-81.73167,41.45957],[-81.73016,41.46231],
+     [-81.72005,41.46241],[-81.72000,41.46965],[-81.71649,41.46966],[-81.71648,41.47528],[-81.72146,41.47515],
+     [-81.72368,41.47474],[-81.73175,41.47188],[-81.73574,41.47100],[-81.73832,41.46367],[-81.73910,41.46269]]],
+    [0,1,[[-81.72002,41.46412],[-81.72005,41.46241],[-81.71322,41.46249],[-81.71333,41.46970],
+     [-81.72000,41.46965],[-81.72002,41.46412]]],
+    [1,2,[[-81.71333,41.46970],[-81.71322,41.46249],[-81.71021,41.46251],[-81.70822,41.46574],
+     [-81.70739,41.46545],[-81.70306,41.46550],[-81.70317,41.46987],[-81.71333,41.46970]]],
+    [1,3,[[-81.73028,41.48447],[-81.73027,41.48298],[-81.72643,41.48398],[-81.72630,41.48510],
+     [-81.71770,41.48732],[-81.71765,41.48809],[-81.71687,41.48840],[-81.71845,41.48881],[-81.71773,41.48909],
+     [-81.71771,41.49151],[-81.72345,41.49148],[-81.72583,41.49073],[-81.72677,41.49130],[-81.73028,41.48994],
+     [-81.73028,41.48447]]],
+    [3,3,[[-81.71376,41.49337],[-81.71164,41.49059],[-81.70928,41.49167],[-81.70846,41.49278],
+     [-81.70737,41.49142],[-81.70329,41.49401],[-81.70201,41.49619],[-81.70282,41.49729],[-81.70541,41.49868],
+     [-81.70807,41.49908],[-81.70913,41.49780],[-81.71191,41.49731],[-81.71376,41.49337]]],
+    [1,1,[[-81.73027,41.48298],[-81.73016,41.47464],[-81.72127,41.47756],[-81.72126,41.48064],
+     [-81.72245,41.48064],[-81.72247,41.48609],[-81.72630,41.48510],[-81.72643,41.48398],[-81.73027,41.48298]]],
+    [0,1,[[-81.73016,41.47409],[-81.73015,41.47241],[-81.72515,41.47432],[-81.72227,41.47504],
+     [-81.71648,41.47528],[-81.71342,41.47495],[-81.71344,41.47594],[-81.71648,41.47597],[-81.71649,41.47927],
+     [-81.71348,41.48034],[-81.71650,41.48413],[-81.71650,41.48547],[-81.71769,41.48516],[-81.71770,41.48732],
+     [-81.72247,41.48609],[-81.72245,41.48064],[-81.72126,41.48064],[-81.72127,41.47756],[-81.73016,41.47464],
+     [-81.73016,41.47409]]],
+    [2,3,[[-81.73036,41.49212],[-81.73028,41.48994],[-81.72677,41.49130],[-81.72583,41.49073],
+     [-81.72345,41.49148],[-81.71771,41.49151],[-81.71773,41.48909],[-81.71845,41.48881],[-81.71687,41.48840],
+     [-81.71769,41.48800],[-81.71769,41.48516],[-81.71650,41.48547],[-81.71650,41.48413],[-81.71348,41.48034],
+     [-81.70620,41.48293],[-81.69783,41.48663],[-81.69777,41.48440],[-81.69469,41.48440],[-81.69447,41.48726],
+     [-81.69569,41.48804],[-81.69779,41.48835],[-81.70047,41.48766],[-81.70048,41.48829],[-81.70161,41.48841],
+     [-81.70388,41.48959],[-81.70461,41.49075],[-81.70329,41.49401],[-81.70737,41.49142],[-81.70846,41.49278],
+     [-81.70928,41.49167],[-81.71164,41.49059],[-81.71376,41.49337],[-81.71329,41.49451],[-81.71191,41.49731],
+     [-81.70913,41.49780],[-81.70807,41.49908],[-81.70890,41.49972],[-81.71481,41.50730],[-81.73022,41.49936],
+     [-81.73036,41.49212]]],
+    [0,1,[[-81.71657,41.47285],[-81.71649,41.46966],[-81.70389,41.46986],[-81.70396,41.47259],
+     [-81.70760,41.47256],[-81.70766,41.47499],[-81.70859,41.47729],[-81.71106,41.48120],[-81.71649,41.47927],
+     [-81.71648,41.47597],[-81.71344,41.47594],[-81.71342,41.47495],[-81.71648,41.47528],[-81.71657,41.47285]]],
+    [0,1,[[-81.71060,41.48136],[-81.71106,41.48120],[-81.70859,41.47729],[-81.70766,41.47499],
+     [-81.70760,41.47256],[-81.70396,41.47259],[-81.70389,41.46986],[-81.69972,41.46993],[-81.69898,41.47717],
+     [-81.70052,41.48051],[-81.70196,41.48245],[-81.70208,41.48472],[-81.71060,41.48136]]],
+    [0,2,[[-81.70208,41.48472],[-81.70196,41.48245],[-81.70052,41.48051],[-81.69898,41.47717],
+     [-81.69972,41.46993],[-81.69693,41.46996],[-81.69455,41.47902],[-81.69469,41.48440],[-81.69777,41.48440],
+     [-81.69783,41.48663],[-81.70208,41.48472]]],
+    [1,3,[[-81.70048,41.48793],[-81.70047,41.48766],[-81.69831,41.48828],[-81.69677,41.48834],
+     [-81.69447,41.48726],[-81.69454,41.47962],[-81.68751,41.47968],[-81.68772,41.48462],[-81.68354,41.48436],
+     [-81.68379,41.48335],[-81.67995,41.47957],[-81.68137,41.47877],[-81.68039,41.47778],[-81.68120,41.47753],
+     [-81.68155,41.47634],[-81.67976,41.47662],[-81.67876,41.47493],[-81.67891,41.47423],[-81.67866,41.47411],
+     [-81.67666,41.47664],[-81.67703,41.47749],[-81.67562,41.47801],[-81.67477,41.47777],[-81.67323,41.47819],
+     [-81.67565,41.48030],[-81.67741,41.48497],[-81.67985,41.48696],[-81.68079,41.48919],[-81.68174,41.48957],
+     [-81.68340,41.48903],[-81.68731,41.48733],[-81.68818,41.48658],[-81.69004,41.48624],[-81.69227,41.48679],
+     [-81.69323,41.48825],[-81.69365,41.49001],[-81.69311,41.49183],[-81.69183,41.49411],[-81.69259,41.49500],
+     [-81.69545,41.49489],[-81.69905,41.49379],[-81.69978,41.49215],[-81.69880,41.48953],[-81.70002,41.48824],
+     [-81.70048,41.48829],[-81.70048,41.48793]]],
+    [1,3,[[-81.69135,41.47965],[-81.69129,41.47607],[-81.68917,41.47607],[-81.68927,41.47741],
+     [-81.68080,41.47755],[-81.68039,41.47778],[-81.68137,41.47877],[-81.67995,41.47957],[-81.68379,41.48335],
+     [-81.68354,41.48436],[-81.68772,41.48462],[-81.68751,41.47968],[-81.69135,41.47965]]],
+    [2,1,[[-81.69675,41.47064],[-81.69693,41.46996],[-81.68175,41.47021],[-81.67866,41.47411],
+     [-81.67898,41.47437],[-81.67876,41.47493],[-81.67976,41.47662],[-81.68155,41.47634],[-81.68120,41.47753],
      [-81.68927,41.47741],[-81.68917,41.47607],[-81.69129,41.47607],[-81.69135,41.47965],[-81.69454,41.47962],
-     [-81.69447,41.48726],[-81.69677,41.48835],[-81.69831,41.48828],[-81.70047,41.48766],[-81.70048,41.48793]],
-    [[-81.76903,41.49733],[-81.75652,41.49476],[-81.75048,41.49420],[-81.75049,41.49387],[-81.74986,41.49405],
-     [-81.74985,41.49055],[-81.75202,41.48584],[-81.74488,41.48453],[-81.75475,41.48086],[-81.76874,41.48517],
-     [-81.76858,41.49164],[-81.76891,41.49166],[-81.76903,41.49733]],
-    [[-81.74969,41.45585],[-81.74965,41.46221],[-81.74662,41.46216],[-81.74661,41.46476],[-81.74141,41.46337],
-     [-81.74139,41.46485],[-81.73802,41.46463],[-81.73910,41.46269],[-81.73858,41.46252],[-81.74846,41.45562],
-     [-81.74969,41.45585]],
-    [[-81.77961,41.45133],[-81.77949,41.45848],[-81.76892,41.46186],[-81.76891,41.44839],[-81.77967,41.44844],
-     [-81.77961,41.45133]],
-    [[-81.73528,41.43997],[-81.73525,41.44591],[-81.73490,41.44758],[-81.73308,41.44798],[-81.73054,41.45006],
-     [-81.72926,41.45052],[-81.72751,41.45068],[-81.72515,41.45020],[-81.71818,41.45040],[-81.71697,41.44997],
-     [-81.71792,41.44672],[-81.71782,41.43989],[-81.73528,41.43997]],
-    [[-81.65147,41.48053],[-81.64878,41.48092],[-81.64723,41.48145],[-81.64330,41.48040],[-81.64251,41.47989],
-     [-81.64239,41.47619],[-81.64116,41.47428],[-81.64010,41.47361],[-81.63815,41.47306],[-81.63275,41.47299],
-     [-81.63274,41.46674],[-81.63306,41.46604],[-81.64955,41.47152],[-81.65139,41.47246],[-81.65147,41.48053]],
-    [[-81.62087,41.52118],[-81.60484,41.52283],[-81.60473,41.51709],[-81.60299,41.51710],[-81.60299,41.51593],
-     [-81.61543,41.51586],[-81.61539,41.51170],[-81.61617,41.51172],[-81.61688,41.51205],[-81.61743,41.51337],
-     [-81.61867,41.51455],[-81.61871,41.51603],[-81.61925,41.51738],[-81.61833,41.51856],[-81.61844,41.51962],
-     [-81.61899,41.52017],[-81.62119,41.52117],[-81.62087,41.52118]],
-    [[-81.74488,41.48453],[-81.73028,41.48994],[-81.73027,41.48298],[-81.73575,41.48155],[-81.73575,41.48262],
-     [-81.74320,41.48069],[-81.74323,41.48411],[-81.74488,41.48453]],
-    [[-81.71792,41.43646],[-81.71792,41.43738],[-81.71643,41.43738],[-81.71643,41.43987],[-81.71782,41.43989],
-     [-81.71792,41.44672],[-81.71728,41.44890],[-81.71600,41.44813],[-81.71187,41.44733],[-81.70939,41.44740],
-     [-81.70451,41.44541],[-81.70290,41.44549],[-81.70325,41.44437],[-81.70546,41.44078],[-81.71263,41.43214],
-     [-81.71631,41.43213],[-81.71630,41.43475],[-81.71791,41.43475],[-81.71792,41.43646]],
-    [[-81.82315,41.42005],[-81.81173,41.43384],[-81.78090,41.43333],[-81.78029,41.43371],[-81.77995,41.43447],
-     [-81.77996,41.43365],[-81.79958,41.41987],[-81.81961,41.41979],[-81.82328,41.41989],[-81.82315,41.42005]],
-    [[-81.66575,41.51245],[-81.65630,41.51620],[-81.65304,41.51231],[-81.65570,41.51159],[-81.65497,41.50797],
-     [-81.65874,41.50756],[-81.65933,41.51053],[-81.66439,41.50912],[-81.66681,41.51201],[-81.66575,41.51245]],
-    [[-81.62424,41.52084],[-81.62119,41.52117],[-81.61867,41.51991],[-81.61826,41.51879],[-81.61925,41.51738],
-     [-81.61871,41.51603],[-81.61867,41.51455],[-81.61743,41.51337],[-81.61688,41.51205],[-81.61539,41.51170],
-     [-81.61539,41.51128],[-81.61595,41.51093],[-81.61918,41.51081],[-81.62182,41.51034],[-81.62186,41.51512],
-     [-81.62124,41.51583],[-81.62335,41.51582],[-81.62337,41.51806],[-81.62421,41.51805],[-81.62424,41.52084]],
-    [[-81.71333,41.46970],[-81.70317,41.46987],[-81.70306,41.46550],[-81.70739,41.46545],[-81.70822,41.46574],
-     [-81.71021,41.46251],[-81.71322,41.46249],[-81.71333,41.46970]],
-    [[-81.57531,41.44325],[-81.57528,41.44503],[-81.57325,41.44556],[-81.57304,41.44975],[-81.56484,41.44979],
-     [-81.56479,41.44014],[-81.57542,41.44301],[-81.57531,41.44325]],
-    [[-81.83553,41.46962],[-81.83231,41.46919],[-81.83009,41.46810],[-81.81806,41.46814],[-81.81567,41.46753],
-     [-81.81458,41.46688],[-81.81371,41.46579],[-81.81373,41.46274],[-81.80712,41.45939],[-81.80523,41.45876],
-     [-81.80477,41.45889],[-81.80227,41.45556],[-81.80589,41.45216],[-81.81679,41.45014],[-81.81991,41.44995],
-     [-81.82415,41.45128],[-81.82478,41.45157],[-81.82228,41.45503],[-81.81915,41.45693],[-81.82213,41.46012],
-     [-81.82359,41.46218],[-81.82373,41.46354],[-81.82212,41.46433],[-81.81920,41.46437],[-81.81727,41.46470],
-     [-81.81589,41.46563],[-81.81589,41.46626],[-81.81645,41.46673],[-81.81857,41.46704],[-81.81957,41.46694],
-     [-81.82344,41.46513],[-81.83287,41.46475],[-81.83612,41.46739],[-81.83553,41.46962]],
-    [[-81.79038,41.44870],[-81.79025,41.45503],[-81.77949,41.45848],[-81.77967,41.44807],[-81.79040,41.44828],
-     [-81.79038,41.44870]],
-    [[-81.60626,41.50822],[-81.59943,41.51355],[-81.59670,41.51613],[-81.59569,41.51570],[-81.59489,41.51620],
-     [-81.59403,41.51571],[-81.59332,41.51611],[-81.59270,41.51575],[-81.59243,41.51602],[-81.59148,41.51587],
-     [-81.59122,41.51613],[-81.59127,41.50871],[-81.59521,41.50868],[-81.59534,41.50798],[-81.59805,41.50496],
-     [-81.59792,41.50118],[-81.60317,41.50105],[-81.60317,41.49958],[-81.60585,41.49986],[-81.60208,41.50525],
-     [-81.60626,41.50822]],
-    [[-81.67473,41.51602],[-81.66161,41.52250],[-81.66410,41.52545],[-81.66401,41.52462],[-81.66558,41.52381],
-     [-81.66427,41.52759],[-81.66229,41.52871],[-81.66835,41.53537],[-81.65234,41.54159],[-81.65190,41.51790],
-     [-81.67214,41.50989],[-81.67354,41.51391],[-81.67473,41.51602]],
-    [[-81.57603,41.58395],[-81.57122,41.58763],[-81.56704,41.58495],[-81.56735,41.58448],[-81.56430,41.58273],
-     [-81.56206,41.58071],[-81.56198,41.57704],[-81.56422,41.57701],[-81.56420,41.57576],[-81.56839,41.57571],
-     [-81.56839,41.57491],[-81.57531,41.57505],[-81.57538,41.57682],[-81.57386,41.57774],[-81.57458,41.57857],
-     [-81.57512,41.57869],[-81.57603,41.58395]],
-    [[-81.74341,41.47847],[-81.74341,41.48063],[-81.73575,41.48262],[-81.73581,41.47719],[-81.73480,41.47719],
-     [-81.73488,41.47308],[-81.73569,41.47114],[-81.73980,41.47075],[-81.74070,41.47114],[-81.74191,41.47075],
-     [-81.74188,41.47715],[-81.74340,41.47714],[-81.74341,41.47847]],
-    [[-81.87897,41.39664],[-81.87846,41.39815],[-81.87735,41.39965],[-81.87173,41.40297],[-81.87199,41.40476],
-     [-81.87281,41.40460],[-81.87268,41.40488],[-81.87018,41.40636],[-81.86867,41.40816],[-81.86906,41.40305],
-     [-81.86720,41.40521],[-81.86521,41.40686],[-81.86578,41.40769],[-81.86563,41.40787],[-81.86532,41.40755],
-     [-81.86495,41.40867],[-81.85815,41.41535],[-81.85887,41.41627],[-81.85595,41.41903],[-81.85455,41.41872],
-     [-81.84881,41.41874],[-81.84485,41.42034],[-81.84142,41.42032],[-81.83466,41.41874],[-81.83083,41.41864],
-     [-81.83080,41.41839],[-81.83118,41.41835],[-81.83094,41.41796],[-81.82730,41.41765],[-81.82723,41.41600],
-     [-81.83107,41.41134],[-81.83125,41.41160],[-81.84267,41.39783],[-81.84841,41.39344],[-81.85030,41.39344],
-     [-81.85229,41.39063],[-81.85335,41.39066],[-81.85337,41.39191],[-81.85456,41.39193],[-81.85460,41.39263],
-     [-81.85659,41.39268],[-81.85691,41.39290],[-81.85905,41.39179],[-81.85908,41.39279],[-81.86094,41.39269],
-     [-81.86088,41.39183],[-81.86300,41.39186],[-81.86292,41.39404],[-81.86540,41.39400],[-81.86503,41.39492],
-     [-81.86704,41.39491],[-81.86757,41.39363],[-81.86839,41.39383],[-81.86875,41.39315],[-81.86794,41.39287],
-     [-81.86822,41.39260],[-81.86885,41.39292],[-81.86911,41.39254],[-81.87031,41.39280],[-81.87064,41.39347],
-     [-81.87373,41.39282],[-81.87347,41.39239],[-81.87451,41.39124],[-81.87568,41.39258],[-81.87475,41.39125],
-     [-81.87508,41.39065],[-81.87587,41.39183],[-81.87584,41.39258],[-81.87722,41.39311],[-81.87883,41.39498],
-     [-81.87897,41.39664]],
-    [[-81.71657,41.47285],[-81.71648,41.47528],[-81.71342,41.47495],[-81.71344,41.47594],[-81.71649,41.47597],
-     [-81.71649,41.47927],[-81.71106,41.48120],[-81.70859,41.47729],[-81.70766,41.47499],[-81.70760,41.47256],
-     [-81.70396,41.47259],[-81.70389,41.46986],[-81.71649,41.46966],[-81.71657,41.47285]],
-    [[-81.69572,41.42113],[-81.69321,41.42110],[-81.68783,41.42199],[-81.68784,41.42477],[-81.68737,41.42552],
-     [-81.68761,41.43468],[-81.68503,41.43439],[-81.68225,41.44055],[-81.68339,41.44259],[-81.68689,41.44514],
-     [-81.68743,41.44505],[-81.68910,41.44738],[-81.68667,41.44616],[-81.68631,41.44621],[-81.68631,41.44656],
-     [-81.68563,41.44655],[-81.68186,41.44373],[-81.67961,41.44453],[-81.67740,41.44408],[-81.67714,41.44323],
-     [-81.67793,41.44187],[-81.67776,41.44141],[-81.67411,41.43901],[-81.67189,41.43829],[-81.67057,41.43989],
-     [-81.66922,41.44019],[-81.66869,41.44000],[-81.66823,41.43828],[-81.66748,41.43792],[-81.66501,41.43775],
-     [-81.66360,41.43699],[-81.66346,41.43460],[-81.66612,41.43285],[-81.67780,41.43270],[-81.67736,41.42271],
-     [-81.67973,41.42209],[-81.67795,41.42130],[-81.68461,41.41944],[-81.69512,41.41918],[-81.69572,41.42113]],
-    [[-81.56454,41.56650],[-81.55826,41.56934],[-81.55058,41.57389],[-81.53878,41.57995],[-81.53857,41.57974],
-     [-81.54127,41.57811],[-81.54155,41.57616],[-81.53784,41.57531],[-81.53602,41.57285],[-81.55678,41.55965],
-     [-81.55993,41.55659],[-81.56269,41.55964],[-81.56381,41.55969],[-81.56388,41.56150],[-81.56425,41.56192],
-     [-81.56260,41.56318],[-81.56454,41.56650]],
-    [[-81.73285,41.43649],[-81.73278,41.43997],[-81.71643,41.43987],[-81.71643,41.43738],[-81.71792,41.43738],
-     [-81.71791,41.43475],[-81.71630,41.43475],[-81.71631,41.43213],[-81.72690,41.43218],[-81.72688,41.43034],
-     [-81.72858,41.43034],[-81.72861,41.43558],[-81.73285,41.43559],[-81.73285,41.43649]],
-    [[-81.71493,41.50745],[-81.71056,41.50968],[-81.69074,41.52368],[-81.68579,41.52681],[-81.66835,41.53537],
-     [-81.66229,41.52871],[-81.66427,41.52759],[-81.66558,41.52381],[-81.66401,41.52462],[-81.66410,41.52545],
-     [-81.66161,41.52250],[-81.69283,41.50697],[-81.69000,41.50393],[-81.69693,41.50044],[-81.69614,41.49958],
-     [-81.69952,41.49787],[-81.69886,41.49708],[-81.70213,41.49636],[-81.70282,41.49729],[-81.70541,41.49868],
-     [-81.70807,41.49908],[-81.70890,41.49972],[-81.71493,41.50745]],
-    [[-81.55552,41.45503],[-81.55550,41.45721],[-81.54564,41.45717],[-81.54561,41.44986],[-81.55506,41.44982],
-     [-81.55552,41.45503]],
-    [[-81.72159,41.45442],[-81.72042,41.45723],[-81.72151,41.45748],[-81.72051,41.45944],[-81.72032,41.46241],
-     [-81.71021,41.46251],[-81.71608,41.45290],[-81.72159,41.45442]],
-    [[-81.64579,41.51568],[-81.64125,41.51574],[-81.64126,41.51415],[-81.63960,41.51416],[-81.63962,41.51483],
-     [-81.63679,41.51483],[-81.63627,41.51511],[-81.63366,41.51225],[-81.63357,41.50931],[-81.63072,41.50932],
-     [-81.63082,41.50375],[-81.64211,41.50427],[-81.64217,41.50688],[-81.64443,41.50681],[-81.64448,41.51102],
-     [-81.64572,41.51102],[-81.64579,41.51568]],
-    [[-81.65139,41.47246],[-81.64955,41.47152],[-81.62970,41.46479],[-81.62923,41.46401],[-81.62936,41.46084],
-     [-81.62820,41.45637],[-81.62788,41.45153],[-81.62919,41.45168],[-81.63049,41.45115],[-81.64234,41.46127],
-     [-81.64546,41.46251],[-81.64989,41.46577],[-81.65128,41.46705],[-81.65139,41.47246]],
-    [[-81.70083,41.45697],[-81.70009,41.45800],[-81.69693,41.46996],[-81.68175,41.47021],[-81.67562,41.47801],
-     [-81.67374,41.47860],[-81.67153,41.47683],[-81.67002,41.47442],[-81.66896,41.47196],[-81.66902,41.46984],
+     [-81.69675,41.47064]]],
+    [1,2,[[-81.70317,41.46987],[-81.70294,41.46177],[-81.69906,41.46183],[-81.69693,41.46996],
+     [-81.70317,41.46987]]],
+    [1,0,[[-81.70090,41.45679],[-81.70026,41.45681],[-81.69665,41.45855],[-81.69416,41.46130],
+     [-81.69401,41.46018],[-81.69090,41.45734],[-81.68805,41.45601],[-81.68731,41.45378],[-81.68773,41.45303],
+     [-81.68781,41.45071],[-81.68230,41.44898],[-81.68123,41.44910],[-81.68289,41.45193],[-81.68412,41.45516],
+     [-81.68265,41.46094],[-81.67935,41.46412],[-81.67755,41.46471],[-81.67403,41.46499],[-81.67304,41.46546],
+     [-81.67068,41.46765],[-81.66902,41.46984],[-81.66896,41.47195],[-81.67002,41.47442],[-81.67153,41.47683],
+     [-81.67323,41.47819],[-81.67477,41.47777],[-81.67562,41.47801],[-81.67703,41.47749],[-81.67666,41.47664],
+     [-81.68175,41.47021],[-81.69693,41.46996],[-81.70009,41.45800],[-81.70090,41.45679]]],
+    [0,2,[[-81.71188,41.45987],[-81.71238,41.45902],[-81.70405,41.45900],[-81.70398,41.45623],
+     [-81.70244,41.45637],[-81.70099,41.45663],[-81.70015,41.45786],[-81.69906,41.46183],[-81.70294,41.46177],
+     [-81.70306,41.46550],[-81.70739,41.46545],[-81.70822,41.46574],[-81.71188,41.45987]]],
+    [1,2,[[-81.74516,41.44722],[-81.74522,41.44696],[-81.74428,41.44643],[-81.74156,41.44707],
+     [-81.74047,41.44701],[-81.74061,41.44607],[-81.74125,41.44534],[-81.74069,41.44532],[-81.73893,41.44571],
+     [-81.73945,41.44805],[-81.73835,41.44875],[-81.73693,41.44820],[-81.73566,41.44835],[-81.73490,41.44758],
+     [-81.73308,41.44798],[-81.73088,41.44988],[-81.72926,41.45052],[-81.72703,41.45067],[-81.72515,41.45020],
+     [-81.71818,41.45040],[-81.71697,41.44997],[-81.71608,41.45290],[-81.72159,41.45442],[-81.72042,41.45723],
+     [-81.72152,41.45748],[-81.72051,41.45944],[-81.72032,41.46241],[-81.73016,41.46231],[-81.73167,41.45957],
+     [-81.73455,41.46103],[-81.73812,41.46235],[-81.73851,41.46128],[-81.73727,41.45175],[-81.74507,41.45185],
+     [-81.74516,41.44722]]],
+    [2,2,[[-81.72159,41.45442],[-81.71608,41.45290],[-81.71021,41.46251],[-81.72032,41.46241],
+     [-81.72051,41.45944],[-81.72152,41.45748],[-81.72042,41.45723],[-81.72159,41.45442]]],
+    [2,2,[[-81.71718,41.44924],[-81.71711,41.44869],[-81.71600,41.44813],[-81.71187,41.44733],
+     [-81.70939,41.44740],[-81.70408,41.44536],[-81.70274,41.44558],[-81.70174,41.45070],[-81.70504,41.45059],
+     [-81.70504,41.44936],[-81.70641,41.44935],[-81.70657,41.45264],[-81.70778,41.45263],[-81.70781,41.45438],
+     [-81.70721,41.45439],[-81.70725,41.45613],[-81.70604,41.45616],[-81.70626,41.45658],[-81.70725,41.45655],
+     [-81.70729,41.45797],[-81.71038,41.45794],[-81.71039,41.45899],[-81.71238,41.45902],[-81.71608,41.45290],
+     [-81.71718,41.44924]]],
+    [1,2,[[-81.71039,41.45899],[-81.71038,41.45794],[-81.70729,41.45797],[-81.70725,41.45655],
+     [-81.70626,41.45658],[-81.70604,41.45616],[-81.70725,41.45613],[-81.70721,41.45439],[-81.70781,41.45438],
+     [-81.70778,41.45263],[-81.70657,41.45264],[-81.70641,41.44935],[-81.70504,41.44936],[-81.70504,41.45059],
+     [-81.70174,41.45070],[-81.70099,41.45663],[-81.70398,41.45623],[-81.70405,41.45900],[-81.71039,41.45899]]],
+    [1,2,[[-81.70280,41.44586],[-81.70279,41.44550],[-81.70009,41.44540],[-81.69986,41.44342],
+     [-81.69900,41.44287],[-81.69792,41.44378],[-81.69657,41.44346],[-81.69585,41.44369],[-81.69404,41.44606],
+     [-81.69240,41.44677],[-81.69038,41.44693],[-81.68910,41.44737],[-81.68667,41.44616],[-81.68583,41.44661],
+     [-81.68437,41.44586],[-81.68465,41.44752],[-81.68328,41.44891],[-81.68230,41.44898],[-81.68781,41.45071],
+     [-81.68773,41.45303],[-81.68731,41.45378],[-81.68805,41.45601],[-81.69090,41.45734],[-81.69401,41.46018],
+     [-81.69416,41.46130],[-81.69665,41.45855],[-81.70099,41.45663],[-81.70196,41.44924],[-81.70280,41.44586]]],
+    [2,3,[[-81.70490,41.44163],[-81.69930,41.43798],[-81.69844,41.43673],[-81.69243,41.43675],
+     [-81.69243,41.43520],[-81.68503,41.43439],[-81.68225,41.44055],[-81.68339,41.44259],[-81.68707,41.44524],
+     [-81.68767,41.44657],[-81.68910,41.44737],[-81.69345,41.44642],[-81.69585,41.44369],[-81.69657,41.44346],
+     [-81.69792,41.44378],[-81.69900,41.44287],[-81.69986,41.44342],[-81.70009,41.44540],[-81.70275,41.44552],
+     [-81.70490,41.44163]]],
+    [2,3,[[-81.71010,41.41905],[-81.69512,41.41918],[-81.69692,41.42480],[-81.69741,41.43065],
+     [-81.69724,41.43260],[-81.70685,41.43249],[-81.70977,41.42522],[-81.70969,41.42205],[-81.71010,41.41905]]],
+    [2,3,[[-81.73528,41.43996],[-81.71782,41.43989],[-81.71792,41.44672],[-81.71697,41.44997],
+     [-81.71818,41.45040],[-81.72515,41.45020],[-81.72751,41.45068],[-81.72926,41.45052],[-81.73054,41.45006],
+     [-81.73308,41.44798],[-81.73490,41.44758],[-81.73525,41.44591],[-81.73528,41.43996]]],
+    [2,2,[[-81.73285,41.43649],[-81.73285,41.43559],[-81.72868,41.43558],[-81.72858,41.43120],
+     [-81.72888,41.43034],[-81.72688,41.43034],[-81.72690,41.43218],[-81.71631,41.43213],[-81.71630,41.43474],
+     [-81.71791,41.43475],[-81.71793,41.43738],[-81.71643,41.43738],[-81.71643,41.43987],[-81.73278,41.43996],
+     [-81.73285,41.43649]]],
+    [2,2,[[-81.71793,41.43738],[-81.71793,41.43646],[-81.70908,41.43643],[-81.70546,41.44078],
+     [-81.70279,41.44550],[-81.70451,41.44541],[-81.70939,41.44740],[-81.71270,41.44746],[-81.71633,41.44823],
+     [-81.71728,41.44890],[-81.71792,41.44672],[-81.71782,41.43989],[-81.71643,41.43987],[-81.71643,41.43738],
+     [-81.71793,41.43738]]],
+    [2,3,[[-81.71793,41.43646],[-81.71791,41.43475],[-81.71630,41.43474],[-81.71631,41.43213],
+     [-81.71263,41.43214],[-81.70908,41.43643],[-81.71793,41.43646]]],
+    [2,2,[[-81.73436,41.42096],[-81.73444,41.41864],[-81.72810,41.41870],[-81.71263,41.43214],
+     [-81.72690,41.43218],[-81.72688,41.43034],[-81.72888,41.43034],[-81.72871,41.42391],[-81.73437,41.42384],
+     [-81.73436,41.42096]]],
+    [2,3,[[-81.72810,41.41870],[-81.71021,41.41891],[-81.70969,41.42205],[-81.70977,41.42522],
+     [-81.70685,41.43249],[-81.70693,41.43903],[-81.71293,41.43178],[-81.72810,41.41870]]],
+    [2,2,[[-81.70693,41.43903],[-81.70685,41.43249],[-81.69724,41.43260],[-81.69713,41.43485],
+     [-81.69930,41.43798],[-81.70473,41.44158],[-81.70693,41.43903]]],
+    [2,3,[[-81.69844,41.43673],[-81.69713,41.43485],[-81.69741,41.43065],[-81.69692,41.42480],
+     [-81.69572,41.42113],[-81.69322,41.42110],[-81.68783,41.42199],[-81.68784,41.42477],[-81.68737,41.42552],
+     [-81.68761,41.43468],[-81.69243,41.43520],[-81.69243,41.43675],[-81.69844,41.43673]]],
+    [1,3,[[-81.69572,41.42113],[-81.69512,41.41918],[-81.68471,41.41943],[-81.68393,41.42062],
+     [-81.68180,41.42023],[-81.67795,41.42130],[-81.67932,41.42190],[-81.67735,41.42241],[-81.67697,41.43246],
+     [-81.66659,41.43247],[-81.66346,41.43460],[-81.66360,41.43699],[-81.66501,41.43775],[-81.66748,41.43792],
+     [-81.66824,41.43828],[-81.66869,41.44000],[-81.66922,41.44019],[-81.67057,41.43989],[-81.67189,41.43829],
+     [-81.67411,41.43901],[-81.67776,41.44141],[-81.67793,41.44187],[-81.67714,41.44323],[-81.67739,41.44407],
+     [-81.67962,41.44453],[-81.68186,41.44373],[-81.68563,41.44655],[-81.68631,41.44656],[-81.68643,41.44614],
+     [-81.68767,41.44657],[-81.68707,41.44524],[-81.68339,41.44259],[-81.68225,41.44055],[-81.68503,41.43439],
+     [-81.68761,41.43468],[-81.68737,41.42552],[-81.68784,41.42477],[-81.68783,41.42199],[-81.69322,41.42110],
+     [-81.69572,41.42113]]],
+    [3,2,[[-81.71493,41.50745],[-81.70890,41.49972],[-81.70807,41.49908],[-81.70541,41.49868],
+     [-81.70282,41.49729],[-81.70213,41.49636],[-81.69886,41.49708],[-81.69952,41.49787],[-81.69614,41.49958],
+     [-81.69693,41.50044],[-81.69001,41.50393],[-81.69271,41.50683],[-81.68495,41.51054],[-81.68370,41.50932],
+     [-81.68436,41.50901],[-81.68373,41.50827],[-81.67516,41.51232],[-81.67592,41.51321],[-81.67118,41.51548],
+     [-81.67252,41.51711],[-81.66161,41.52250],[-81.66410,41.52545],[-81.66401,41.52462],[-81.66558,41.52381],
+     [-81.66427,41.52759],[-81.66229,41.52871],[-81.66835,41.53537],[-81.68579,41.52681],[-81.69074,41.52368],
+     [-81.71056,41.50968],[-81.71493,41.50745]]],
+    [3,3,[[-81.70439,41.49158],[-81.70461,41.49075],[-81.70388,41.48959],[-81.70161,41.48841],
+     [-81.70002,41.48824],[-81.69880,41.48953],[-81.69978,41.49215],[-81.69905,41.49379],[-81.69545,41.49489],
+     [-81.69259,41.49500],[-81.69183,41.49411],[-81.69225,41.49335],[-81.69122,41.49305],[-81.68719,41.49508],
+     [-81.68320,41.49334],[-81.67794,41.49243],[-81.67770,41.49312],[-81.67872,41.49383],[-81.67954,41.49544],
+     [-81.67177,41.49938],[-81.67055,41.50055],[-81.66989,41.50227],[-81.68454,41.50058],[-81.68492,41.50196],
+     [-81.68770,41.50513],[-81.69693,41.50044],[-81.69614,41.49958],[-81.69952,41.49787],[-81.69886,41.49708],
+     [-81.70213,41.49636],[-81.70439,41.49158]]],
+    [3,3,[[-81.69267,41.50684],[-81.69001,41.50393],[-81.68770,41.50513],[-81.68492,41.50196],
+     [-81.68454,41.50058],[-81.66989,41.50227],[-81.67061,41.50539],[-81.67372,41.51426],[-81.67592,41.51321],
+     [-81.67516,41.51232],[-81.68373,41.50827],[-81.68436,41.50901],[-81.68370,41.50932],[-81.68495,41.51054],
+     [-81.69267,41.50684]]],
+    [3,2,[[-81.67372,41.51426],[-81.67214,41.50989],[-81.65190,41.51790],[-81.65234,41.54159],
+     [-81.66835,41.53537],[-81.66229,41.52871],[-81.66427,41.52759],[-81.66558,41.52381],[-81.66401,41.52462],
+     [-81.66410,41.52545],[-81.66161,41.52250],[-81.67252,41.51711],[-81.67118,41.51548],[-81.67372,41.51426]]],
+    [2,2,[[-81.67202,41.50994],[-81.66989,41.50227],[-81.65182,41.50433],[-81.65190,41.51790],
+     [-81.65630,41.51620],[-81.65304,41.51231],[-81.65571,41.51159],[-81.65497,41.50797],[-81.65874,41.50756],
+     [-81.65933,41.51053],[-81.66439,41.50912],[-81.66681,41.51201],[-81.67202,41.50994]]],
+    [1,1,[[-81.66575,41.51245],[-81.66681,41.51201],[-81.66439,41.50912],[-81.65933,41.51053],
+     [-81.65874,41.50756],[-81.65497,41.50797],[-81.65571,41.51159],[-81.65304,41.51231],[-81.65630,41.51620],
+     [-81.66575,41.51245]]],
+    [3,3,[[-81.67390,41.49827],[-81.67376,41.49725],[-81.65883,41.49655],[-81.66007,41.49317],
+     [-81.65641,41.49277],[-81.65166,41.49341],[-81.65182,41.50433],[-81.66989,41.50227],[-81.67099,41.50002],
+     [-81.67390,41.49827]]],
+    [3,0,[[-81.67954,41.49544],[-81.67872,41.49383],[-81.67770,41.49312],[-81.67794,41.49243],
+     [-81.67385,41.49158],[-81.67067,41.49193],[-81.66822,41.49141],[-81.66714,41.49435],[-81.66007,41.49317],
+     [-81.65883,41.49655],[-81.67376,41.49725],[-81.67390,41.49827],[-81.67954,41.49544]]],
+    [0,3,[[-81.66928,41.48876],[-81.66941,41.48840],[-81.66677,41.48734],[-81.66652,41.48630],
+     [-81.66030,41.48302],[-81.65831,41.48235],[-81.65530,41.48200],[-81.66043,41.48440],[-81.65771,41.49279],
+     [-81.66714,41.49435],[-81.66928,41.48876]]],
+    [3,3,[[-81.66029,41.48478],[-81.66043,41.48440],[-81.65530,41.48200],[-81.65151,41.48187],
+     [-81.65166,41.49341],[-81.65771,41.49279],[-81.66029,41.48478]]],
+    [0,1,[[-81.66645,41.48626],[-81.66568,41.48307],[-81.66556,41.48071],[-81.66598,41.48012],
+     [-81.66510,41.47999],[-81.66146,41.47696],[-81.65128,41.46705],[-81.65151,41.48187],[-81.65530,41.48200],
+     [-81.65887,41.48249],[-81.66645,41.48626]]],
+    [0,1,[[-81.66793,41.47073],[-81.66793,41.47047],[-81.65971,41.47081],[-81.65937,41.46905],
+     [-81.65715,41.46330],[-81.65545,41.46299],[-81.65343,41.46303],[-81.65032,41.46392],[-81.64687,41.46305],
+     [-81.64654,41.46331],[-81.65059,41.46640],[-81.66104,41.47653],[-81.66231,41.47594],[-81.66316,41.47596],
+     [-81.66192,41.47491],[-81.66193,41.47330],[-81.66241,41.47204],[-81.66468,41.47097],[-81.66793,41.47073]]],
+    [0,0,[[-81.68412,41.45516],[-81.68289,41.45193],[-81.68103,41.44902],[-81.68024,41.45063],
+     [-81.68110,41.45105],[-81.68150,41.45506],[-81.65713,41.45576],[-81.65704,41.45334],[-81.65401,41.45337],
+     [-81.65407,41.45235],[-81.65194,41.45103],[-81.65096,41.45102],[-81.65098,41.45170],[-81.64996,41.45172],
+     [-81.64986,41.46041],[-81.64863,41.46042],[-81.64864,41.46173],[-81.64687,41.46305],[-81.65032,41.46392],
+     [-81.65343,41.46303],[-81.65545,41.46299],[-81.65715,41.46330],[-81.66413,41.46774],[-81.66902,41.46988],
      [-81.67068,41.46765],[-81.67304,41.46546],[-81.67403,41.46499],[-81.67755,41.46471],[-81.67935,41.46412],
-     [-81.68265,41.46094],[-81.68412,41.45516],[-81.68289,41.45193],[-81.68123,41.44910],[-81.68230,41.44898],
-     [-81.68781,41.45071],[-81.68773,41.45303],[-81.68948,41.45650],[-81.69090,41.45734],[-81.69401,41.46018],
-     [-81.69416,41.46130],[-81.69665,41.45855],[-81.69945,41.45720],[-81.70090,41.45679],[-81.70083,41.45697]],
-    [[-81.58460,41.45279],[-81.58460,41.45298],[-81.57304,41.45304],[-81.57325,41.44556],[-81.57528,41.44503],
-     [-81.57542,41.44301],[-81.58400,41.44534],[-81.58403,41.45071],[-81.58456,41.45072],[-81.58460,41.45279]],
-    [[-81.66029,41.48478],[-81.65771,41.49278],[-81.65166,41.49341],[-81.65151,41.48187],[-81.65530,41.48200],
-     [-81.66043,41.48440],[-81.66029,41.48478]],
-    [[-81.77996,41.43371],[-81.77967,41.44844],[-81.76891,41.44839],[-81.76680,41.44659],[-81.76375,41.44881],
-     [-81.76324,41.44856],[-81.76316,41.44739],[-81.76442,41.44624],[-81.76395,41.44498],[-81.77996,41.43371]],
-    [[-81.75974,41.46728],[-81.75974,41.46771],[-81.75419,41.46963],[-81.75413,41.47707],[-81.74854,41.47711],
-     [-81.74857,41.47046],[-81.74407,41.47060],[-81.74520,41.47034],[-81.74743,41.46892],[-81.75871,41.46522],
-     [-81.75872,41.46720],[-81.75974,41.46728]],
-    [[-81.67390,41.49827],[-81.67099,41.50002],[-81.66989,41.50227],[-81.65183,41.50433],[-81.65166,41.49341],
-     [-81.65641,41.49277],[-81.66007,41.49317],[-81.65883,41.49656],[-81.67375,41.49725],[-81.67390,41.49827]],
-    [[-81.60285,41.55076],[-81.59065,41.55615],[-81.59112,41.55452],[-81.59115,41.54499],[-81.59744,41.54132],
-     [-81.60102,41.54134],[-81.60147,41.54874],[-81.60285,41.55076]],
-    [[-81.56499,41.59249],[-81.55058,41.60444],[-81.54998,41.59927],[-81.54988,41.58895],[-81.54019,41.58898],
-     [-81.54011,41.58239],[-81.53952,41.58213],[-81.53896,41.58130],[-81.53878,41.57995],[-81.54442,41.57710],
-     [-81.55133,41.58372],[-81.56201,41.58801],[-81.56730,41.59083],[-81.56499,41.59249]],
-    [[-81.76905,41.44910],[-81.76898,41.45638],[-81.75885,41.45626],[-81.75894,41.45292],[-81.75944,41.45180],
-     [-81.75942,41.44844],[-81.76395,41.44498],[-81.76442,41.44624],[-81.76316,41.44739],[-81.76324,41.44856],
-     [-81.76375,41.44881],[-81.76680,41.44659],[-81.76873,41.44814],[-81.76905,41.44910]],
-    [[-81.71009,41.41905],[-81.70969,41.42205],[-81.70977,41.42522],[-81.70685,41.43249],[-81.69724,41.43260],
-     [-81.69741,41.43065],[-81.69692,41.42480],[-81.69512,41.41918],[-81.71009,41.41905]],
-    [[-81.73579,41.47809],[-81.73575,41.48155],[-81.73027,41.48298],[-81.73014,41.47241],[-81.73359,41.47142],
-     [-81.73569,41.47114],[-81.73488,41.47308],[-81.73480,41.47719],[-81.73581,41.47719],[-81.73579,41.47809]],
-    [[-81.65000,41.45597],[-81.64986,41.46041],[-81.64863,41.46042],[-81.64864,41.46173],[-81.64654,41.46331],
-     [-81.64546,41.46251],[-81.64252,41.46139],[-81.63971,41.45902],[-81.64019,41.45874],[-81.64016,41.45622],
-     [-81.64495,41.45607],[-81.64491,41.45258],[-81.64996,41.45247],[-81.65000,41.45597]],
-    [[-81.66793,41.47073],[-81.66468,41.47097],[-81.66241,41.47204],[-81.66193,41.47330],[-81.66192,41.47491],
+     [-81.68265,41.46094],[-81.68412,41.45516]]],
+    [0,0,[[-81.65234,41.54159],[-81.65190,41.51790],[-81.64888,41.51824],[-81.64889,41.52128],
+     [-81.65024,41.52304],[-81.63361,41.53056],[-81.63361,41.52784],[-81.63021,41.52782],[-81.62832,41.52830],
+     [-81.62910,41.53103],[-81.63041,41.53339],[-81.62981,41.53525],[-81.62993,41.53650],[-81.63173,41.53811],
+     [-81.63236,41.54032],[-81.63228,41.54078],[-81.63100,41.54121],[-81.62857,41.53988],[-81.62634,41.54058],
+     [-81.62648,41.54867],[-81.63101,41.54767],[-81.63145,41.54806],[-81.63329,41.54818],[-81.63528,41.54660],
+     [-81.65234,41.54159]]],
+    [0,1,[[-81.63236,41.54032],[-81.63173,41.53811],[-81.62993,41.53650],[-81.62981,41.53525],
+     [-81.63041,41.53339],[-81.62910,41.53103],[-81.62872,41.52914],[-81.62795,41.52807],[-81.62753,41.52887],
+     [-81.62647,41.52841],[-81.62753,41.53000],[-81.62775,41.53174],[-81.62847,41.53291],[-81.62078,41.53640],
+     [-81.62103,41.54242],[-81.62645,41.53971],[-81.62634,41.54058],[-81.62857,41.53988],[-81.63100,41.54121],
+     [-81.63228,41.54078],[-81.63236,41.54032]]],
+    [0,0,[[-81.65024,41.52304],[-81.64889,41.52128],[-81.64888,41.51824],[-81.64423,41.51872],
+     [-81.64425,41.52039],[-81.64161,41.52111],[-81.64532,41.52529],[-81.65024,41.52304]]],
+    [0,0,[[-81.64452,41.52563],[-81.64532,41.52529],[-81.64161,41.52111],[-81.64425,41.52039],
+     [-81.64423,41.51872],[-81.63718,41.51945],[-81.63717,41.52087],[-81.63964,41.52085],[-81.63972,41.52781],
+     [-81.64452,41.52563]]],
+    [0,0,[[-81.63972,41.52781],[-81.63964,41.52085],[-81.63717,41.52087],[-81.63722,41.52296],
+     [-81.63359,41.52296],[-81.63361,41.53056],[-81.63972,41.52781]]],
+    [0,0,[[-81.63722,41.52296],[-81.63718,41.51945],[-81.62783,41.52047],[-81.62782,41.52338],
+     [-81.63359,41.52338],[-81.63359,41.52296],[-81.63722,41.52296]]],
+    [0,0,[[-81.63361,41.52474],[-81.63359,41.52338],[-81.62782,41.52338],[-81.62783,41.52047],
+     [-81.62119,41.52117],[-81.62236,41.52283],[-81.62621,41.52579],[-81.62826,41.52841],[-81.63021,41.52782],
+     [-81.63361,41.52784],[-81.63361,41.52474]]],
+    [1,2,[[-81.65190,41.51790],[-81.65186,41.51398],[-81.64575,41.51402],[-81.64579,41.51568],
+     [-81.64536,41.51572],[-81.64125,41.51574],[-81.64126,41.51415],[-81.63960,41.51417],[-81.63962,41.51483],
+     [-81.63679,41.51483],[-81.63627,41.51511],[-81.63731,41.51629],[-81.63679,41.51656],[-81.63306,41.51662],
+     [-81.63305,41.51741],[-81.63362,41.51747],[-81.63358,41.51848],[-81.63899,41.51831],[-81.63986,41.51916],
+     [-81.65190,41.51790]]],
+    [0,0,[[-81.63962,41.51919],[-81.63986,41.51916],[-81.63899,41.51831],[-81.63358,41.51848],
+     [-81.63362,41.51747],[-81.63305,41.51741],[-81.63306,41.51662],[-81.63679,41.51656],[-81.63731,41.51629],
+     [-81.63682,41.51575],[-81.62334,41.51582],[-81.62337,41.51806],[-81.62421,41.51805],[-81.62424,41.52084],
+     [-81.63962,41.51919]]],
+    [3,0,[[-81.65186,41.51398],[-81.65182,41.50433],[-81.64929,41.50451],[-81.64211,41.50427],
+     [-81.64217,41.50688],[-81.64443,41.50681],[-81.64448,41.51102],[-81.64572,41.51102],[-81.64575,41.51402],
+     [-81.65186,41.51398]]],
+    [0,1,[[-81.64579,41.51568],[-81.64572,41.51102],[-81.64448,41.51102],[-81.64445,41.50847],
+     [-81.63786,41.50855],[-81.63542,41.50931],[-81.63357,41.50931],[-81.63367,41.51224],[-81.63627,41.51511],
+     [-81.63679,41.51483],[-81.63962,41.51483],[-81.63960,41.51417],[-81.64126,41.51415],[-81.64125,41.51574],
+     [-81.64579,41.51568]]],
+    [1,1,[[-81.63682,41.51575],[-81.63367,41.51224],[-81.63357,41.50931],[-81.63073,41.50933],
+     [-81.63085,41.50530],[-81.62708,41.50938],[-81.62743,41.50936],[-81.62748,41.51579],[-81.63682,41.51575]]],
+    [0,0,[[-81.62748,41.51579],[-81.62743,41.50936],[-81.62182,41.51034],[-81.62186,41.51511],
+     [-81.62124,41.51583],[-81.62748,41.51579]]],
+    [1,2,[[-81.64445,41.50847],[-81.64443,41.50681],[-81.64217,41.50688],[-81.64211,41.50427],
+     [-81.63067,41.50375],[-81.63073,41.50933],[-81.63542,41.50931],[-81.63786,41.50855],[-81.64445,41.50847]]],
+    [0,0,[[-81.65182,41.50433],[-81.65171,41.49624],[-81.64064,41.49617],[-81.64067,41.50049],
+     [-81.61725,41.49937],[-81.61726,41.49773],[-81.61526,41.49774],[-81.61526,41.50374],[-81.62454,41.50344],
+     [-81.64690,41.50448],[-81.65182,41.50433]]],
+    [0,1,[[-81.62854,41.49989],[-81.62851,41.49341],[-81.62735,41.49342],[-81.62730,41.49007],
+     [-81.62307,41.48999],[-81.62161,41.49074],[-81.62161,41.49102],[-81.62163,41.49343],[-81.62314,41.49343],
+     [-81.62314,41.49965],[-81.62854,41.49989]]],
+    [0,0,[[-81.62610,41.48822],[-81.61488,41.48831],[-81.61171,41.49320],[-81.61212,41.49348],
+     [-81.61524,41.49347],[-81.61526,41.49774],[-81.61726,41.49773],[-81.61725,41.49937],[-81.62314,41.49965],
+     [-81.62314,41.49343],[-81.62163,41.49343],[-81.62161,41.49074],[-81.62307,41.48999],[-81.62448,41.49000],
+     [-81.62449,41.48905],[-81.62610,41.48822]]],
+    [3,3,[[-81.65171,41.49557],[-81.65151,41.48187],[-81.63641,41.48589],[-81.63642,41.48815],
+     [-81.63933,41.48813],[-81.63941,41.49337],[-81.64276,41.49626],[-81.65171,41.49624],[-81.65171,41.49557]]],
+    [1,0,[[-81.63941,41.49337],[-81.63933,41.48813],[-81.63642,41.48815],[-81.63641,41.48549],
+     [-81.62976,41.48642],[-81.62449,41.48905],[-81.62448,41.49008],[-81.62730,41.49007],[-81.62735,41.49342],
+     [-81.63941,41.49337]]],
+    [3,1,[[-81.64091,41.47449],[-81.64045,41.47386],[-81.63868,41.47315],[-81.63275,41.47299],
+     [-81.63303,41.48595],[-81.63641,41.48549],[-81.63625,41.47931],[-81.63636,41.47872],[-81.63702,41.47905],
+     [-81.63744,41.47852],[-81.63751,41.47527],[-81.63774,41.47486],[-81.63943,41.47530],[-81.64053,41.47494],
+     [-81.64091,41.47449]]],
+    [0,0,[[-81.63293,41.46628],[-81.63306,41.46604],[-81.63000,41.46500],[-81.62944,41.46452],
+     [-81.62900,41.45922],[-81.62141,41.45911],[-81.62152,41.47574],[-81.61488,41.48831],[-81.62610,41.48822],
+     [-81.62976,41.48642],[-81.63303,41.48595],[-81.63273,41.47850],[-81.63293,41.46628]]],
+    [0,0,[[-81.65147,41.48053],[-81.65139,41.47246],[-81.64955,41.47152],[-81.63306,41.46604],
+     [-81.63274,41.46674],[-81.63275,41.47299],[-81.63815,41.47306],[-81.64010,41.47361],[-81.64116,41.47428],
+     [-81.64237,41.47610],[-81.64289,41.47626],[-81.64245,41.47650],[-81.64251,41.47989],[-81.64330,41.48040],
+     [-81.64723,41.48144],[-81.64878,41.48092],[-81.65147,41.48053]]],
+    [0,3,[[-81.65151,41.48187],[-81.65147,41.48053],[-81.64878,41.48092],[-81.64723,41.48144],
+     [-81.64330,41.48040],[-81.64251,41.47989],[-81.64245,41.47650],[-81.64289,41.47626],[-81.64237,41.47610],
+     [-81.64116,41.47428],[-81.63963,41.47346],[-81.64078,41.47409],[-81.64091,41.47449],[-81.64053,41.47494],
+     [-81.63915,41.47531],[-81.63774,41.47486],[-81.63745,41.47551],[-81.63744,41.47852],[-81.63702,41.47905],
+     [-81.63636,41.47872],[-81.63625,41.47931],[-81.63641,41.48589],[-81.65151,41.48187]]],
+    [0,0,[[-81.65139,41.47246],[-81.65128,41.46705],[-81.64642,41.46321],[-81.63266,41.46342],
+     [-81.63264,41.46591],[-81.64955,41.47152],[-81.65139,41.47246]]],
+    [0,2,[[-81.65000,41.45597],[-81.64996,41.45247],[-81.64491,41.45257],[-81.64495,41.45607],
+     [-81.64615,41.45605],[-81.64621,41.46032],[-81.64742,41.46032],[-81.64743,41.46122],[-81.64865,41.46120],
+     [-81.64863,41.46042],[-81.64986,41.46041],[-81.65000,41.45597]]],
+    [0,1,[[-81.64866,41.46168],[-81.64865,41.46120],[-81.64743,41.46122],[-81.64742,41.46032],
+     [-81.64621,41.46032],[-81.64615,41.45605],[-81.64016,41.45622],[-81.64019,41.45874],[-81.63971,41.45902],
+     [-81.64252,41.46139],[-81.64546,41.46251],[-81.64654,41.46331],[-81.64866,41.46168]]],
+    [0,1,[[-81.64642,41.46321],[-81.64546,41.46251],[-81.64234,41.46127],[-81.63007,41.45080],
+     [-81.62846,41.45155],[-81.62884,41.45160],[-81.62793,41.45228],[-81.62809,41.45559],[-81.62936,41.46084],
+     [-81.62923,41.46401],[-81.63000,41.46500],[-81.63264,41.46591],[-81.63266,41.46342],[-81.64642,41.46321]]],
+    [1,1,[[-81.65098,41.45170],[-81.65093,41.44835],[-81.64783,41.44842],[-81.64483,41.44770],
+     [-81.64316,41.44794],[-81.64134,41.44859],[-81.63883,41.44865],[-81.63896,41.45838],[-81.63971,41.45902],
+     [-81.64019,41.45874],[-81.64016,41.45622],[-81.64495,41.45607],[-81.64491,41.45257],[-81.64996,41.45247],
+     [-81.64996,41.45172],[-81.65098,41.45170]]],
+    [1,2,[[-81.65147,41.44217],[-81.65105,41.44099],[-81.64456,41.44112],[-81.64455,41.43917],
+     [-81.63997,41.43921],[-81.63877,41.44334],[-81.63883,41.44865],[-81.64134,41.44859],[-81.64316,41.44794],
+     [-81.64483,41.44770],[-81.64783,41.44842],[-81.65093,41.44835],[-81.65082,41.44251],[-81.65084,41.44226],
+     [-81.65147,41.44217]]],
+    [0,1,[[-81.63973,41.44005],[-81.63984,41.43966],[-81.63612,41.43974],[-81.63544,41.44080],
+     [-81.63700,41.44085],[-81.63701,41.44144],[-81.62337,41.44149],[-81.62509,41.44395],[-81.62413,41.44516],
+     [-81.62489,41.44634],[-81.63896,41.45838],[-81.63877,41.44334],[-81.63973,41.44005]]],
+    [2,2,[[-81.63341,41.43864],[-81.63302,41.43661],[-81.63312,41.43414],[-81.61541,41.43427],
+     [-81.61525,41.43941],[-81.61834,41.44137],[-81.62134,41.44282],[-81.62173,41.44399],[-81.62314,41.44453],
+     [-81.62370,41.44514],[-81.62416,41.44506],[-81.62509,41.44395],[-81.62337,41.44149],[-81.63330,41.44141],
+     [-81.63341,41.43864]]],
+    [0,1,[[-81.62103,41.54242],[-81.62078,41.53640],[-81.61554,41.53875],[-81.61554,41.54504],
+     [-81.62103,41.54242]]],
+    [0,0,[[-81.61554,41.54081],[-81.61554,41.53875],[-81.61312,41.53988],[-81.60890,41.54049],
+     [-81.60861,41.54620],[-81.60718,41.54807],[-81.60351,41.54968],[-81.60209,41.55003],[-81.60291,41.55074],
+     [-81.61554,41.54504],[-81.61554,41.54081]]],
+    [0,0,[[-81.60890,41.54505],[-81.60890,41.54049],[-81.60327,41.54134],[-81.60102,41.54135],
+     [-81.60139,41.54825],[-81.60209,41.55003],[-81.60351,41.54968],[-81.60738,41.54795],[-81.60885,41.54576],
+     [-81.60890,41.54505]]],
+    [0,1,[[-81.62847,41.53291],[-81.62775,41.53174],[-81.62753,41.53000],[-81.62647,41.52841],
+     [-81.61553,41.52856],[-81.61554,41.53875],[-81.62847,41.53291]]],
+    [0,0,[[-81.61555,41.53164],[-81.61554,41.52957],[-81.60937,41.52957],[-81.60938,41.52831],
+     [-81.60586,41.52833],[-81.60890,41.54049],[-81.61312,41.53988],[-81.61554,41.53875],[-81.61555,41.53164]]],
+    [0,0,[[-81.60890,41.54049],[-81.60645,41.53004],[-81.59821,41.52997],[-81.59824,41.53064],
+     [-81.59475,41.53051],[-81.59933,41.53470],[-81.60074,41.53770],[-81.60102,41.54135],[-81.60327,41.54134],
+     [-81.60890,41.54049]]],
+    [0,0,[[-81.60285,41.55076],[-81.60147,41.54875],[-81.60102,41.54135],[-81.59744,41.54132],
+     [-81.59202,41.54454],[-81.59203,41.54515],[-81.59115,41.54512],[-81.59112,41.55452],[-81.59065,41.55615],
+     [-81.60285,41.55076]]],
+    [0,0,[[-81.60102,41.54135],[-81.60074,41.53770],[-81.59933,41.53470],[-81.59475,41.53051],
+     [-81.59183,41.53065],[-81.59166,41.54059],[-81.59202,41.54454],[-81.59744,41.54132],[-81.60102,41.54135]]],
+    [0,1,[[-81.59082,41.54515],[-81.59043,41.54495],[-81.57534,41.54521],[-81.57544,41.55327],
+     [-81.58114,41.55185],[-81.58354,41.55055],[-81.58937,41.54593],[-81.59082,41.54515]]],
+    [0,2,[[-81.59285,41.57280],[-81.58660,41.56817],[-81.58590,41.56869],[-81.58525,41.56784],
+     [-81.58524,41.56664],[-81.58137,41.56668],[-81.57534,41.56832],[-81.57509,41.57009],[-81.57538,41.57682],
+     [-81.57386,41.57774],[-81.57485,41.57876],[-81.57466,41.57910],[-81.57513,41.57869],[-81.57602,41.58395],
+     [-81.59285,41.57280]]],
+    [0,1,[[-81.59196,41.56172],[-81.59149,41.56166],[-81.59149,41.55575],[-81.58949,41.55695],
+     [-81.57555,41.56300],[-81.57534,41.56832],[-81.58137,41.56668],[-81.58534,41.56664],[-81.58816,41.56698],
+     [-81.58877,41.56395],[-81.59196,41.56172]]],
+    [1,2,[[-81.57602,41.58395],[-81.57513,41.57869],[-81.57466,41.57910],[-81.57485,41.57876],
+     [-81.57386,41.57774],[-81.57538,41.57682],[-81.57531,41.57505],[-81.56839,41.57491],[-81.56839,41.57571],
+     [-81.56420,41.57576],[-81.56422,41.57701],[-81.56198,41.57704],[-81.56206,41.58071],[-81.56430,41.58273],
+     [-81.56735,41.58448],[-81.56704,41.58495],[-81.57122,41.58763],[-81.57602,41.58395]]],
+    [0,2,[[-81.57559,41.56671],[-81.57554,41.56259],[-81.56609,41.56579],[-81.55826,41.56934],
+     [-81.54888,41.57478],[-81.55166,41.57706],[-81.55816,41.57372],[-81.56357,41.57198],[-81.56369,41.57220],
+     [-81.56419,41.57208],[-81.56420,41.57576],[-81.56839,41.57571],[-81.56839,41.57491],[-81.57531,41.57505],
+     [-81.57509,41.57009],[-81.57559,41.56671]]],
+    [0,0,[[-81.59113,41.55261],[-81.59105,41.54512],[-81.58937,41.54593],[-81.58354,41.55055],
+     [-81.58114,41.55185],[-81.57544,41.55327],[-81.57555,41.56300],[-81.58992,41.55672],[-81.59094,41.55546],
+     [-81.59113,41.55261]]],
+    [0,1,[[-81.57554,41.56259],[-81.57544,41.55327],[-81.56260,41.56318],[-81.56454,41.56649],
+     [-81.57554,41.56259]]],
+    [0,1,[[-81.57544,41.55327],[-81.57534,41.54521],[-81.57111,41.54506],[-81.55993,41.55659],
+     [-81.56269,41.55964],[-81.56381,41.55969],[-81.56388,41.56150],[-81.56425,41.56192],[-81.57544,41.55327]]],
+    [2,2,[[-81.57027,41.58841],[-81.57122,41.58763],[-81.56704,41.58495],[-81.56735,41.58448],
+     [-81.56430,41.58273],[-81.56206,41.58071],[-81.56198,41.57704],[-81.56422,41.57701],[-81.56419,41.57208],
+     [-81.56369,41.57220],[-81.56357,41.57198],[-81.55899,41.57337],[-81.55166,41.57706],[-81.54888,41.57478],
+     [-81.54441,41.57710],[-81.55133,41.58372],[-81.56201,41.58801],[-81.56730,41.59083],[-81.57027,41.58841]]],
+    [2,2,[[-81.56500,41.59250],[-81.56730,41.59083],[-81.56201,41.58801],[-81.55133,41.58372],
+     [-81.54441,41.57710],[-81.53878,41.57995],[-81.53896,41.58130],[-81.53952,41.58213],[-81.54011,41.58238],
+     [-81.54019,41.58898],[-81.54988,41.58895],[-81.54998,41.59927],[-81.55058,41.60444],[-81.56500,41.59250]]],
+    [1,2,[[-81.56454,41.56649],[-81.56260,41.56318],[-81.56425,41.56192],[-81.56388,41.56150],
+     [-81.56381,41.55969],[-81.56269,41.55964],[-81.55993,41.55659],[-81.55678,41.55965],[-81.53602,41.57285],
+     [-81.53784,41.57531],[-81.54155,41.57616],[-81.54127,41.57811],[-81.53857,41.57974],[-81.53878,41.57995],
+     [-81.55058,41.57389],[-81.55826,41.56934],[-81.56454,41.56649]]],
+    [0,1,[[-81.56821,41.54805],[-81.56564,41.54623],[-81.56534,41.54517],[-81.55679,41.54540],
+     [-81.55650,41.54578],[-81.55665,41.54778],[-81.55692,41.54796],[-81.55831,41.54662],[-81.55860,41.54789],
+     [-81.56085,41.54959],[-81.54779,41.55855],[-81.55210,41.56145],[-81.55365,41.56167],[-81.55749,41.55907],
+     [-81.56821,41.54805]]],
+    [0,0,[[-81.62784,41.52819],[-81.62621,41.52579],[-81.62236,41.52283],[-81.62119,41.52117],
+     [-81.61547,41.52169],[-81.61553,41.52856],[-81.62647,41.52841],[-81.62740,41.52889],[-81.62777,41.52874],
+     [-81.62784,41.52819]]],
+    [0,1,[[-81.61554,41.52957],[-81.61547,41.52169],[-81.60560,41.52275],[-81.60560,41.52803],
+     [-81.60586,41.52833],[-81.60938,41.52831],[-81.60937,41.52957],[-81.61554,41.52957]]],
+    [0,2,[[-81.62087,41.52118],[-81.62119,41.52117],[-81.61899,41.52017],[-81.61844,41.51962],
+     [-81.61833,41.51856],[-81.61925,41.51739],[-81.61871,41.51603],[-81.61867,41.51455],[-81.61744,41.51337],
+     [-81.61688,41.51205],[-81.61617,41.51172],[-81.61539,41.51170],[-81.61544,41.51586],[-81.60299,41.51593],
+     [-81.60299,41.51710],[-81.60473,41.51710],[-81.60484,41.52283],[-81.62087,41.52118]]],
+    [0,0,[[-81.60645,41.53004],[-81.60612,41.52864],[-81.60560,41.52803],[-81.60560,41.52275],
+     [-81.59810,41.52305],[-81.59821,41.52997],[-81.60645,41.53004]]],
+    [0,0,[[-81.60484,41.52283],[-81.60473,41.51710],[-81.60114,41.51711],[-81.59980,41.51798],
+     [-81.59869,41.51794],[-81.59803,41.51752],[-81.59803,41.52305],[-81.60484,41.52283]]],
+    [1,1,[[-81.62424,41.52084],[-81.62421,41.51805],[-81.62337,41.51806],[-81.62334,41.51582],
+     [-81.62124,41.51583],[-81.62186,41.51511],[-81.62182,41.51034],[-81.61918,41.51081],[-81.61595,41.51092],
+     [-81.61539,41.51128],[-81.61539,41.51170],[-81.61688,41.51205],[-81.61744,41.51337],[-81.61867,41.51455],
+     [-81.61871,41.51603],[-81.61925,41.51739],[-81.61826,41.51879],[-81.61867,41.51992],[-81.62119,41.52117],
+     [-81.62424,41.52084]]],
+    [3,3,[[-81.61544,41.51586],[-81.61526,41.50374],[-81.61236,41.50380],[-81.61141,41.50417],
+     [-81.59943,41.51355],[-81.59670,41.51613],[-81.59809,41.51610],[-81.59803,41.51752],[-81.59869,41.51794],
+     [-81.59980,41.51798],[-81.60114,41.51711],[-81.60299,41.51710],[-81.60299,41.51593],[-81.61544,41.51586]]],
+    [1,3,[[-81.60626,41.50822],[-81.60232,41.50542],[-81.60338,41.50385],[-81.60447,41.50299],
+     [-81.60386,41.50224],[-81.60551,41.49983],[-81.60317,41.49958],[-81.60317,41.50105],[-81.59792,41.50118],
+     [-81.59805,41.50557],[-81.59521,41.50868],[-81.59127,41.50871],[-81.59122,41.51613],[-81.59670,41.51613],
+     [-81.59943,41.51355],[-81.60626,41.50822]]],
+    [1,3,[[-81.63085,41.50530],[-81.63067,41.50375],[-81.62454,41.50344],[-81.61526,41.50374],
+     [-81.61539,41.51128],[-81.61622,41.51081],[-81.61918,41.51081],[-81.62708,41.50938],[-81.63085,41.50530]]],
+    [0,3,[[-81.61526,41.50038],[-81.61526,41.49780],[-81.60971,41.49785],[-81.60962,41.49726],
+     [-81.60867,41.49774],[-81.60845,41.49757],[-81.60638,41.49885],[-81.60551,41.49983],[-81.60386,41.50224],
+     [-81.60447,41.50299],[-81.60338,41.50385],[-81.60232,41.50542],[-81.60626,41.50822],[-81.61187,41.50392],
+     [-81.61526,41.50374],[-81.61526,41.50038]]],
+    [1,0,[[-81.61526,41.49780],[-81.61524,41.49347],[-81.61212,41.49348],[-81.61171,41.49320],
+     [-81.61136,41.49368],[-81.60907,41.49252],[-81.60873,41.49200],[-81.60333,41.48929],[-81.60192,41.48915],
+     [-81.60157,41.49041],[-81.60148,41.49425],[-81.60170,41.49475],[-81.60320,41.49508],[-81.60317,41.49958],
+     [-81.60551,41.49983],[-81.60733,41.49816],[-81.60962,41.49726],[-81.60971,41.49785],[-81.61526,41.49780]]],
+    [0,2,[[-81.61738,41.48368],[-81.61783,41.48281],[-81.61658,41.48241],[-81.60291,41.48100],
+     [-81.60293,41.48681],[-81.60192,41.48915],[-81.60333,41.48929],[-81.60873,41.49200],[-81.60907,41.49252],
+     [-81.61136,41.49368],[-81.61386,41.49024],[-81.61738,41.48368]]],
+    [1,2,[[-81.60293,41.48681],[-81.60291,41.48424],[-81.59541,41.48419],[-81.59569,41.48781],
+     [-81.59376,41.48759],[-81.59365,41.49295],[-81.60162,41.49464],[-81.60157,41.49041],[-81.60293,41.48681]]],
+    [0,1,[[-81.60291,41.48388],[-81.60288,41.47804],[-81.59486,41.47800],[-81.59513,41.48317],
+     [-81.59771,41.48317],[-81.59830,41.48342],[-81.59830,41.48421],[-81.60291,41.48424],[-81.60291,41.48388]]],
+    [1,2,[[-81.59197,41.47982],[-81.59195,41.47800],[-81.59039,41.47799],[-81.59039,41.47965],
+     [-81.58452,41.47909],[-81.58495,41.48103],[-81.58507,41.48669],[-81.59188,41.48737],[-81.59189,41.48414],
+     [-81.59113,41.48410],[-81.59110,41.48343],[-81.59042,41.48331],[-81.59040,41.48238],[-81.59177,41.48243],
+     [-81.59197,41.47982]]],
+    [0,3,[[-81.59830,41.48383],[-81.59830,41.48342],[-81.59771,41.48317],[-81.59513,41.48317],
+     [-81.59486,41.47800],[-81.59195,41.47800],[-81.59177,41.48243],[-81.59040,41.48238],[-81.59042,41.48331],
+     [-81.59110,41.48343],[-81.59113,41.48410],[-81.59189,41.48414],[-81.59188,41.48737],[-81.59569,41.48781],
+     [-81.59541,41.48419],[-81.59830,41.48421],[-81.59830,41.48383]]],
+    [0,0,[[-81.61443,41.47991],[-81.61425,41.47227],[-81.61296,41.47243],[-81.61317,41.47145],
+     [-81.61113,41.47161],[-81.61040,41.47133],[-81.60967,41.47061],[-81.60934,41.46942],[-81.60286,41.46806],
+     [-81.60291,41.48100],[-81.61443,41.48221],[-81.61443,41.47991]]],
+    [1,1,[[-81.59195,41.47800],[-81.59188,41.47109],[-81.58471,41.47113],[-81.58504,41.47907],
+     [-81.59039,41.47965],[-81.59039,41.47799],[-81.59195,41.47800]]],
+    [0,0,[[-81.60289,41.47361],[-81.60289,41.47279],[-81.59187,41.47283],[-81.59195,41.47800],
+     [-81.60288,41.47804],[-81.60289,41.47361]]],
+    [0,0,[[-81.60289,41.47279],[-81.60286,41.46806],[-81.58466,41.46435],[-81.58471,41.47113],
+     [-81.59188,41.47109],[-81.59187,41.47283],[-81.60289,41.47279]]],
+    [0,2,[[-81.58479,41.47180],[-81.58466,41.46435],[-81.57241,41.46441],[-81.57242,41.46522],
+     [-81.57686,41.46545],[-81.57673,41.47038],[-81.57693,41.47121],[-81.57767,41.47182],[-81.58479,41.47180]]],
+    [0,1,[[-81.62152,41.47574],[-81.62150,41.47196],[-81.60934,41.46942],[-81.60967,41.47061],
+     [-81.61040,41.47133],[-81.61113,41.47161],[-81.61317,41.47145],[-81.61296,41.47243],[-81.61425,41.47227],
+     [-81.61443,41.48221],[-81.61783,41.48281],[-81.62152,41.47574]]],
+    [0,1,[[-81.62150,41.47006],[-81.62140,41.45723],[-81.61328,41.45726],[-81.61325,41.46358],
+     [-81.61470,41.46356],[-81.61471,41.46829],[-81.61685,41.46981],[-81.61694,41.47099],[-81.62150,41.47196],
+     [-81.62150,41.47006]]],
+    [0,0,[[-81.61709,41.47050],[-81.61653,41.46950],[-81.61471,41.46829],[-81.61470,41.46356],
+     [-81.61325,41.46358],[-81.61328,41.45726],[-81.60815,41.45733],[-81.60768,41.45761],[-81.60857,41.45916],
+     [-81.60847,41.46744],[-81.60499,41.46726],[-81.60501,41.46851],[-81.61694,41.47099],[-81.61709,41.47050]]],
+    [0,0,[[-81.60857,41.46149],[-81.60839,41.45850],[-81.60700,41.45716],[-81.60508,41.45668],
+     [-81.59929,41.45682],[-81.59948,41.46736],[-81.60501,41.46851],[-81.60499,41.46726],[-81.60847,41.46744],
+     [-81.60857,41.46149]]],
+    [0,1,[[-81.59948,41.46736],[-81.59929,41.46161],[-81.59117,41.46166],[-81.59117,41.46085],
+     [-81.58464,41.46086],[-81.58466,41.46435],[-81.59948,41.46736]]],
+    [0,1,[[-81.59929,41.45775],[-81.59929,41.45682],[-81.59116,41.45689],[-81.59115,41.45651],
+     [-81.58463,41.45656],[-81.58464,41.46086],[-81.59117,41.46085],[-81.59117,41.46166],[-81.59929,41.46161],
+     [-81.59929,41.45775]]],
+    [1,2,[[-81.57866,41.46439],[-81.57854,41.45301],[-81.57305,41.45304],[-81.57308,41.45756],
+     [-81.57250,41.45755],[-81.57255,41.46441],[-81.57866,41.46439]]],
+    [0,1,[[-81.58466,41.46435],[-81.58460,41.45298],[-81.57854,41.45301],[-81.57875,41.46439],
+     [-81.58466,41.46435]]],
+    [0,0,[[-81.60287,41.45681],[-81.60285,41.45066],[-81.59113,41.45073],[-81.59116,41.45689],
+     [-81.60287,41.45681]]],
+    [0,0,[[-81.59115,41.45203],[-81.59113,41.44901],[-81.58403,41.44909],[-81.58403,41.45071],
+     [-81.58456,41.45072],[-81.58463,41.45656],[-81.59115,41.45651],[-81.59115,41.45203]]],
+    [0,0,[[-81.62153,41.44342],[-81.62134,41.44282],[-81.61834,41.44137],[-81.61525,41.43941],
+     [-81.61534,41.44152],[-81.60286,41.44165],[-81.60283,41.44763],[-81.60894,41.44888],[-81.61367,41.44887],
+     [-81.61539,41.44987],[-81.62136,41.45100],[-81.62153,41.44342]]],
+    [0,1,[[-81.60286,41.44977],[-81.60283,41.44788],[-81.57977,41.44300],[-81.57977,41.44420],
+     [-81.58400,41.44534],[-81.58403,41.44909],[-81.59113,41.44901],[-81.59113,41.45073],[-81.60285,41.45066],
+     [-81.60286,41.44977]]],
+    [0,1,[[-81.60283,41.44200],[-81.60286,41.44165],[-81.58426,41.44174],[-81.58454,41.43505],
+     [-81.58176,41.43505],[-81.58178,41.43862],[-81.57975,41.43864],[-81.57977,41.44300],[-81.60283,41.44788],
+     [-81.60283,41.44200]]],
+    [1,1,[[-81.58460,41.45279],[-81.58456,41.45072],[-81.58403,41.45071],[-81.58400,41.44534],
+     [-81.57917,41.44403],[-81.57920,41.44427],[-81.57854,41.44449],[-81.57876,41.44393],[-81.57542,41.44301],
+     [-81.57528,41.44503],[-81.57325,41.44556],[-81.57305,41.45304],[-81.58460,41.45298],[-81.58460,41.45279]]],
+    [2,2,[[-81.57308,41.45756],[-81.57305,41.44975],[-81.55506,41.44982],[-81.55550,41.45721],
+     [-81.57250,41.45716],[-81.57250,41.45755],[-81.57308,41.45756]]],
+    [1,2,[[-81.55552,41.45503],[-81.55506,41.44982],[-81.54561,41.44986],[-81.54564,41.45717],
+     [-81.55550,41.45721],[-81.55552,41.45503]]],
+    [1,1,[[-81.57531,41.44325],[-81.57542,41.44301],[-81.56479,41.44014],[-81.56484,41.44979],
+     [-81.57305,41.44975],[-81.57325,41.44556],[-81.57528,41.44503],[-81.57531,41.44325]]],
+    [1,2,[[-81.56484,41.44979],[-81.56479,41.44014],[-81.55560,41.43766],[-81.55545,41.44247],
+     [-81.54567,41.44241],[-81.54561,41.44986],[-81.56484,41.44979]]],
+    [1,2,[[-81.58179,41.43747],[-81.58176,41.43505],[-81.58067,41.43496],[-81.58059,41.43051],
+     [-81.57785,41.43034],[-81.57785,41.43099],[-81.57478,41.43100],[-81.57480,41.43138],[-81.57067,41.43128],
+     [-81.57064,41.42988],[-81.56809,41.42968],[-81.56795,41.42455],[-81.56488,41.42431],[-81.56479,41.44014],
+     [-81.57876,41.44393],[-81.57854,41.44449],[-81.57920,41.44427],[-81.57917,41.44403],[-81.57977,41.44420],
+     [-81.57975,41.43864],[-81.58178,41.43862],[-81.58179,41.43747]]],
+    [1,1,[[-81.56485,41.42455],[-81.56488,41.42431],[-81.55428,41.42434],[-81.55464,41.42708],
+     [-81.55195,41.42708],[-81.55226,41.43135],[-81.55172,41.43436],[-81.55531,41.43573],[-81.55560,41.43766],
+     [-81.56479,41.44014],[-81.56485,41.42455]]],
+    [2,3,[[-81.81559,41.46763],[-81.81371,41.46579],[-81.81373,41.46274],[-81.80712,41.45939],
+     [-81.80523,41.45877],[-81.80477,41.45889],[-81.80444,41.46092],[-81.79998,41.46413],[-81.79732,41.46853],
+     [-81.79733,41.46993],[-81.80474,41.47015],[-81.81036,41.46994],[-81.81076,41.46957],[-81.81040,41.46800],
+     [-81.81525,41.46805],[-81.81559,41.46763]]],
+    [2,2,[[-81.80477,41.45889],[-81.80226,41.45556],[-81.79896,41.45867],[-81.79221,41.46283],
+     [-81.78997,41.46373],[-81.78482,41.46469],[-81.78276,41.46537],[-81.78120,41.46872],[-81.78045,41.46931],
+     [-81.78306,41.47049],[-81.78903,41.47045],[-81.79095,41.47012],[-81.79733,41.46993],[-81.79732,41.46853],
+     [-81.79998,41.46413],[-81.80444,41.46092],[-81.80477,41.45889]]],
+    [2,2,[[-81.83553,41.46962],[-81.83612,41.46739],[-81.83287,41.46475],[-81.82344,41.46513],
+     [-81.81957,41.46694],[-81.81857,41.46704],[-81.81645,41.46673],[-81.81589,41.46626],[-81.81589,41.46563],
+     [-81.81727,41.46470],[-81.81920,41.46436],[-81.82212,41.46433],[-81.82373,41.46354],[-81.82359,41.46218],
+     [-81.82213,41.46012],[-81.81915,41.45693],[-81.82228,41.45503],[-81.82478,41.45157],[-81.82415,41.45128],
+     [-81.81991,41.44995],[-81.81679,41.45014],[-81.80589,41.45216],[-81.80226,41.45556],[-81.80477,41.45889],
+     [-81.80523,41.45877],[-81.80712,41.45939],[-81.81373,41.46274],[-81.81371,41.46579],[-81.81458,41.46687],
+     [-81.81567,41.46753],[-81.81806,41.46814],[-81.83009,41.46810],[-81.83231,41.46918],[-81.83553,41.46962]]],
+    [1,3,[[-81.79023,41.45558],[-81.79025,41.45503],[-81.76892,41.46186],[-81.76880,41.47400],
+     [-81.78063,41.46922],[-81.78120,41.46872],[-81.78276,41.46537],[-81.78482,41.46469],[-81.78997,41.46373],
+     [-81.79023,41.45558]]],
+    [2,3,[[-81.80499,41.45301],[-81.80589,41.45216],[-81.79025,41.45503],[-81.78997,41.46373],
+     [-81.79221,41.46283],[-81.79896,41.45867],[-81.80499,41.45301]]],
+    [2,2,[[-81.82123,41.43608],[-81.82255,41.43402],[-81.81173,41.43384],[-81.80141,41.44620],
+     [-81.80144,41.44681],[-81.80245,41.44591],[-81.81032,41.44602],[-81.81041,41.44309],[-81.81885,41.44314],
+     [-81.82064,41.43710],[-81.82123,41.43608]]],
+    [2,2,[[-81.84548,41.43879],[-81.84528,41.43771],[-81.84283,41.43796],[-81.84220,41.43778],
+     [-81.84177,41.43630],[-81.84129,41.43581],[-81.83862,41.43425],[-81.82255,41.43402],[-81.82064,41.43710],
+     [-81.81855,41.44418],[-81.82376,41.44425],[-81.82244,41.44908],[-81.82199,41.44938],[-81.82276,41.44917],
+     [-81.82526,41.44929],[-81.82709,41.44982],[-81.82726,41.45027],[-81.82836,41.45055],[-81.82819,41.45099],
+     [-81.82985,41.45214],[-81.83142,41.45238],[-81.83208,41.45205],[-81.83136,41.44845],[-81.83176,41.44707],
+     [-81.83126,41.44520],[-81.82966,41.44313],[-81.83137,41.44077],[-81.83387,41.44001],[-81.83941,41.44217],
+     [-81.84363,41.44251],[-81.84437,41.44188],[-81.84548,41.43879]]],
+    [2,2,[[-81.82726,41.45027],[-81.82709,41.44982],[-81.82526,41.44929],[-81.82276,41.44917],
+     [-81.82199,41.44938],[-81.82244,41.44908],[-81.82376,41.44425],[-81.81855,41.44418],[-81.81885,41.44314],
+     [-81.81041,41.44309],[-81.81032,41.44602],[-81.80245,41.44591],[-81.80144,41.44681],[-81.80141,41.44620],
+     [-81.79480,41.45418],[-81.81679,41.45014],[-81.82046,41.44993],[-81.82478,41.45157],[-81.82726,41.45027]]],
+    [1,3,[[-81.85502,41.42437],[-81.85366,41.42315],[-81.85456,41.42005],[-81.85316,41.42004],
+     [-81.85197,41.42132],[-81.85222,41.41872],[-81.84881,41.41874],[-81.84516,41.42025],[-81.84364,41.42038],
+     [-81.84058,41.42021],[-81.83444,41.41871],[-81.83083,41.41864],[-81.83074,41.42089],[-81.82255,41.43402],
+     [-81.83862,41.43425],[-81.84129,41.43581],[-81.84177,41.43630],[-81.84220,41.43778],[-81.84283,41.43796],
+     [-81.84528,41.43771],[-81.84347,41.43443],[-81.84366,41.43232],[-81.84516,41.43055],[-81.84606,41.43125],
+     [-81.84839,41.43225],[-81.84931,41.43104],[-81.85063,41.43014],[-81.85347,41.43044],[-81.85376,41.42505],
+     [-81.85495,41.42516],[-81.85502,41.42437]]],
+    [3,1,[[-81.83090,41.42021],[-81.83080,41.41839],[-81.82446,41.41868],[-81.81173,41.43384],
+     [-81.82255,41.43402],[-81.83006,41.42205],[-81.83090,41.42021]]],
+    [2,3,[[-81.79039,41.44870],[-81.79040,41.44828],[-81.77967,41.44807],[-81.77949,41.45848],
+     [-81.79025,41.45503],[-81.79039,41.44870]]],
+    [2,3,[[-81.77961,41.45133],[-81.77967,41.44844],[-81.76891,41.44839],[-81.76892,41.46186],
+     [-81.77949,41.45848],[-81.77961,41.45133]]],
+    [3,2,[[-81.80822,41.43809],[-81.80847,41.43779],[-81.80476,41.43877],[-81.79394,41.43847],
+     [-81.79059,41.43900],[-81.79025,41.45503],[-81.79480,41.45418],[-81.80822,41.43809]]],
+    [1,3,[[-81.81173,41.43384],[-81.79069,41.43352],[-81.79059,41.43900],[-81.79333,41.43848],
+     [-81.80401,41.43880],[-81.80676,41.43839],[-81.80847,41.43779],[-81.81173,41.43384]]],
+    [2,3,[[-81.79065,41.43555],[-81.79069,41.43352],[-81.78089,41.43333],[-81.78029,41.43371],
+     [-81.77995,41.43447],[-81.77967,41.44807],[-81.79040,41.44828],[-81.79065,41.43555]]],
+    [2,3,[[-81.82315,41.42005],[-81.82328,41.41989],[-81.81961,41.41979],[-81.79958,41.41987],
+     [-81.77996,41.43365],[-81.77995,41.43447],[-81.78029,41.43371],[-81.78089,41.43333],[-81.81173,41.43384],
+     [-81.82315,41.42005]]],
+    [2,2,[[-81.79938,41.42002],[-81.79958,41.41987],[-81.79903,41.41985],[-81.79666,41.42111],
+     [-81.79394,41.42174],[-81.78031,41.42172],[-81.78036,41.42010],[-81.78094,41.41845],[-81.76965,41.41841],
+     [-81.76916,41.44147],[-81.79938,41.42002]]],
+    [3,2,[[-81.56043,41.54987],[-81.56085,41.54959],[-81.55860,41.54789],[-81.55831,41.54662],
+     [-81.55692,41.54796],[-81.55665,41.54778],[-81.55650,41.54578],[-81.55679,41.54540],[-81.55612,41.54523],
+     [-81.54638,41.54509],[-81.54637,41.54649],[-81.54449,41.54542],[-81.53274,41.54535],[-81.53683,41.54851],
+     [-81.53856,41.54913],[-81.53897,41.54994],[-81.54050,41.55106],[-81.54284,41.55158],[-81.54386,41.55260],
+     [-81.54413,41.55604],[-81.54779,41.55855],[-81.56043,41.54987]]],
+    [0,1,[[-81.62967,41.45102],[-81.63007,41.45080],[-81.62489,41.44634],[-81.62416,41.44506],
+     [-81.62370,41.44514],[-81.62314,41.44453],[-81.62183,41.44409],[-81.62150,41.44360],[-81.62136,41.45100],
+     [-81.61539,41.44987],[-81.61367,41.44887],[-81.60894,41.44888],[-81.60283,41.44763],[-81.60287,41.45681],
+     [-81.60585,41.45676],[-81.60768,41.45761],[-81.60832,41.45730],[-81.62140,41.45723],[-81.62141,41.45911],
+     [-81.62900,41.45922],[-81.62821,41.45637],[-81.62793,41.45228],[-81.62884,41.45160],[-81.62846,41.45155],
+     [-81.62967,41.45102]]],
+    [1,2,[[-81.77996,41.43371],[-81.76394,41.44498],[-81.76442,41.44624],[-81.76316,41.44739],
+     [-81.76324,41.44856],[-81.76375,41.44881],[-81.76680,41.44659],[-81.76891,41.44839],[-81.77967,41.44844],
+     [-81.77996,41.43371]]],
+    [0,2,[[-81.64257,41.49625],[-81.63957,41.49337],[-81.62851,41.49341],[-81.62854,41.49989],
+     [-81.64067,41.50049],[-81.64064,41.49617],[-81.64257,41.49625]]],
+    [0,3,[[-81.69365,41.49001],[-81.69323,41.48825],[-81.69227,41.48679],[-81.69004,41.48624],
+     [-81.68818,41.48658],[-81.68731,41.48733],[-81.68174,41.48957],[-81.68079,41.48919],[-81.67985,41.48696],
+     [-81.67741,41.48497],[-81.67565,41.48030],[-81.67153,41.47683],[-81.67002,41.47442],[-81.66896,41.47195],
+     [-81.66902,41.46988],[-81.66413,41.46774],[-81.65736,41.46338],[-81.65971,41.47081],[-81.66793,41.47047],
+     [-81.66793,41.47073],[-81.66468,41.47097],[-81.66241,41.47204],[-81.66193,41.47330],[-81.66192,41.47491],
      [-81.66316,41.47596],[-81.66231,41.47594],[-81.66104,41.47653],[-81.66510,41.47999],[-81.66598,41.48012],
-     [-81.66555,41.48055],[-81.66568,41.48307],[-81.66652,41.48630],[-81.65887,41.48249],[-81.65530,41.48200],
-     [-81.65151,41.48187],[-81.65128,41.46705],[-81.64654,41.46331],[-81.64687,41.46305],[-81.65032,41.46392],
-     [-81.65343,41.46303],[-81.65545,41.46299],[-81.65715,41.46330],[-81.65754,41.46348],[-81.65818,41.46607],
-     [-81.65955,41.46896],[-81.65990,41.47081],[-81.66793,41.47047],[-81.66793,41.47073]],
-    [[-81.59082,41.54515],[-81.58937,41.54593],[-81.58354,41.55055],[-81.58114,41.55185],[-81.57544,41.55327],
-     [-81.57534,41.54521],[-81.59043,41.54495],[-81.59082,41.54515]],
-    [[-81.63972,41.52781],[-81.63361,41.53057],[-81.63359,41.52296],[-81.63722,41.52296],[-81.63717,41.52087],
-     [-81.63964,41.52085],[-81.63972,41.52781]],
-    [[-81.60293,41.48681],[-81.60157,41.49041],[-81.60162,41.49464],[-81.59365,41.49295],[-81.59366,41.49236],
-     [-81.59324,41.49223],[-81.59372,41.49139],[-81.59323,41.49122],[-81.59353,41.48756],[-81.59569,41.48781],
-     [-81.59541,41.48419],[-81.60291,41.48424],[-81.60293,41.48681]],
-    [[-81.63962,41.51920],[-81.62424,41.52084],[-81.62421,41.51805],[-81.62337,41.51806],[-81.62335,41.51582],
-     [-81.63682,41.51575],[-81.63731,41.51629],[-81.63679,41.51656],[-81.63306,41.51662],[-81.63305,41.51741],
-     [-81.63362,41.51747],[-81.63358,41.51848],[-81.63899,41.51831],[-81.63987,41.51916],[-81.63962,41.51920]],
-    [[-81.74516,41.44722],[-81.74507,41.45185],[-81.73727,41.45175],[-81.73851,41.46128],[-81.73812,41.46235],
-     [-81.73455,41.46103],[-81.73167,41.45957],[-81.73016,41.46231],[-81.72032,41.46241],[-81.72051,41.45944],
-     [-81.72151,41.45748],[-81.72042,41.45723],[-81.72159,41.45442],[-81.71608,41.45290],[-81.71697,41.44997],
-     [-81.71818,41.45040],[-81.72515,41.45020],[-81.72704,41.45067],[-81.72926,41.45052],[-81.73088,41.44988],
-     [-81.73308,41.44798],[-81.73490,41.44758],[-81.73565,41.44835],[-81.73693,41.44820],[-81.73835,41.44875],
-     [-81.73945,41.44805],[-81.73893,41.44572],[-81.74069,41.44532],[-81.74125,41.44534],[-81.74061,41.44607],
-     [-81.74047,41.44701],[-81.74156,41.44707],[-81.74428,41.44643],[-81.74522,41.44696],[-81.74516,41.44722]],
-    [[-81.65024,41.52304],[-81.63972,41.52781],[-81.63964,41.52085],[-81.63717,41.52087],[-81.63718,41.51945],
-     [-81.64888,41.51824],[-81.64889,41.52128],[-81.65024,41.52304]],
-    [[-81.59196,41.56172],[-81.58877,41.56395],[-81.58841,41.56645],[-81.58137,41.56668],[-81.57541,41.56789],
-     [-81.57555,41.56300],[-81.58949,41.55695],[-81.59149,41.55575],[-81.59149,41.56166],[-81.59196,41.56172]],
-    [[-81.85502,41.42437],[-81.85495,41.42516],[-81.85376,41.42505],[-81.85347,41.43044],[-81.85063,41.43014],
-     [-81.84931,41.43104],[-81.84839,41.43225],[-81.84606,41.43125],[-81.84516,41.43055],[-81.84366,41.43232],
-     [-81.84347,41.43443],[-81.84528,41.43771],[-81.84283,41.43796],[-81.84220,41.43778],[-81.84177,41.43630],
-     [-81.84129,41.43581],[-81.83862,41.43425],[-81.82255,41.43403],[-81.83074,41.42089],[-81.83083,41.41864],
-     [-81.83444,41.41871],[-81.84058,41.42021],[-81.84363,41.42038],[-81.84516,41.42025],[-81.84881,41.41874],
-     [-81.85222,41.41872],[-81.85197,41.42132],[-81.85316,41.42004],[-81.85456,41.42005],[-81.85366,41.42315],
-     [-81.85502,41.42437]],
-    [[-81.73015,41.47409],[-81.73015,41.47464],[-81.72127,41.47756],[-81.72126,41.48064],[-81.72245,41.48064],
-     [-81.72246,41.48609],[-81.71770,41.48732],[-81.71769,41.48516],[-81.71650,41.48547],[-81.71650,41.48413],
-     [-81.71348,41.48034],[-81.71649,41.47927],[-81.71649,41.47597],[-81.71344,41.47594],[-81.71342,41.47495],
-     [-81.71648,41.47528],[-81.72227,41.47504],[-81.72515,41.47431],[-81.73014,41.47241],[-81.73015,41.47409]],
-    [[-81.79065,41.43555],[-81.79040,41.44828],[-81.77967,41.44807],[-81.77995,41.43447],[-81.78029,41.43371],
-     [-81.78090,41.43333],[-81.79069,41.43353],[-81.79065,41.43555]],
-    [[-81.76897,41.45722],[-81.76892,41.46186],[-81.75865,41.46524],[-81.75885,41.45626],[-81.76898,41.45638],
-     [-81.76897,41.45722]],
-    [[-81.63973,41.44005],[-81.63877,41.44334],[-81.63896,41.45838],[-81.62370,41.44514],[-81.62416,41.44506],
-     [-81.62509,41.44395],[-81.62337,41.44149],[-81.63701,41.44144],[-81.63700,41.44085],[-81.63544,41.44080],
-     [-81.63612,41.43974],[-81.63984,41.43966],[-81.63973,41.44005]]
+     [-81.66556,41.48071],[-81.66568,41.48307],[-81.66677,41.48734],[-81.66941,41.48840],[-81.66822,41.49141],
+     [-81.67067,41.49193],[-81.67385,41.49158],[-81.68162,41.49323],[-81.68239,41.49314],[-81.68719,41.49508],
+     [-81.69102,41.49310],[-81.69225,41.49335],[-81.69365,41.49001]]],
+    [0,-1,[[-81.87898,41.39664],[-81.87883,41.39498],[-81.87722,41.39311],[-81.87584,41.39258],
+     [-81.87587,41.39183],[-81.87508,41.39065],[-81.87475,41.39125],[-81.87568,41.39258],[-81.87451,41.39124],
+     [-81.87347,41.39239],[-81.87373,41.39282],[-81.87064,41.39347],[-81.87031,41.39280],[-81.86911,41.39254],
+     [-81.86885,41.39292],[-81.86822,41.39260],[-81.86794,41.39287],[-81.86875,41.39315],[-81.86839,41.39383],
+     [-81.86757,41.39363],[-81.86704,41.39491],[-81.86503,41.39492],[-81.86540,41.39400],[-81.86292,41.39404],
+     [-81.86300,41.39186],[-81.86088,41.39183],[-81.86094,41.39269],[-81.85908,41.39279],[-81.85905,41.39179],
+     [-81.85691,41.39290],[-81.85659,41.39267],[-81.85460,41.39263],[-81.85456,41.39193],[-81.85337,41.39191],
+     [-81.85335,41.39066],[-81.85229,41.39063],[-81.85030,41.39344],[-81.84841,41.39344],[-81.84267,41.39783],
+     [-81.83126,41.41160],[-81.83108,41.41134],[-81.82723,41.41601],[-81.82730,41.41765],[-81.83094,41.41796],
+     [-81.83118,41.41835],[-81.83080,41.41839],[-81.83083,41.41864],[-81.83466,41.41874],[-81.84142,41.42032],
+     [-81.84485,41.42034],[-81.84881,41.41874],[-81.85455,41.41872],[-81.85595,41.41903],[-81.85887,41.41627],
+     [-81.85815,41.41536],[-81.86495,41.40867],[-81.86532,41.40755],[-81.86563,41.40787],[-81.86578,41.40769],
+     [-81.86521,41.40686],[-81.86720,41.40521],[-81.86906,41.40305],[-81.86867,41.40817],[-81.87018,41.40636],
+     [-81.87268,41.40488],[-81.87281,41.40460],[-81.87199,41.40476],[-81.87173,41.40297],[-81.87735,41.39965],
+     [-81.87846,41.39815],[-81.87898,41.39664]]]
   ];
 
-  // The 16 schools in the 2010-2011 closure wave, as [lng, lat]. One source row
-  // arrived as lat,lng and is flipped here to match the rest. The last one is
-  // Fulton, at the coordinate the story was reported with; it sits ~50 m west of
-  // the building, which is under a pixel at the zoom these squares are seen at.
+  // The 22 schools of the 2010-2011 closure wave, as [lng, lat, what became of
+  // the building]; the source rows arrive as lat,lng and are flipped here to
+  // match the rest. Each one
+  // falls inside one of the twenty tracts the story turns on, two of which
+  // hold two schools apiece. Fulton is the row at 41.47003: it now sits within
+  // about 7 m of the building centre the piece opens on, close enough to hold
+  // at the zoom the closing chapter reaches.
   const CLOSURES = [
-    [-81.6334751,41.519117],  [-81.6346483,41.4565599], [-81.6363621,41.4525232],
-    [-81.6008383,41.4884321], [-81.609648,41.475994],   [-81.7699461,41.448311],
-    [-81.6096851,41.5355942], [-81.6244483,41.5321342], [-81.606805,41.545711],
-    [-81.5675283,41.4533875], [-81.585333,41.563554],   [-81.6491527,41.513014],
-    [-81.628247,41.511157],   [-81.6187622,41.524078],  [-81.602889,41.52043],
-    [-81.584578,41.4700087]
+    [-81.6324198,41.5182495,'reused'],
+    [-81.634765,41.456231,'reused'],
+    [-81.6236685,41.532365,'vacant'],
+    [-81.6090924,41.4753369,'vacant'],
+    [-81.6281398,41.5127947,'park'],
+    [-81.5840709,41.4700318,'vacant'],
+    [-81.6077897,41.5449899,'park'],
+    [-81.5861486,41.5632805,'reused'],
+    [-81.648086,41.4546542,'empty lot'],
+    [-81.6004275,41.4885762,'new school'],
+    [-81.6183312,41.5236852,'new school'],
+    [-81.6092291,41.5355526,'empty lot'],
+    [-81.5673649,41.4532209,'empty lot'],
+    [-81.6484705,41.5133759,'empty lot'],
+    [-81.7699155,41.4480632,'new school'],
+    [-81.6222015,41.4628979,'new school'],
+    [-81.5961371,41.5364803,'new school'],
+    [-81.6297113,41.5081689,'empty lot'],
+    [-81.6421639,41.463543,'empty lot'],
+    [-81.640068,41.4975089,'empty lot'],
+    [-81.5550093,41.4303738,'empty lot'],
+    [-81.6478978,41.5072473,'new school']
   ];
 
   // Satellite imagery: Esri World Imagery — real tiles through z19 here (USGS caps at z16).
@@ -1200,7 +1516,7 @@
   let curMask = 'circle';
   let curView = 'close';
   let curSquares = 'off';
-  let curTracts = 'off';
+  let curTracts = 'off';   // off | 2000s | 2010s
   let curPlate = 'opener';   // matches the markup, which ships the opener visible
 
   map.on('load', () => {
@@ -1226,20 +1542,29 @@
                    paint: { 'fill-color': NAVY, 'fill-opacity': 1,
                             'fill-opacity-transition': { duration: MASK_FADE_MS } } });
 
-    // The tract outlines, under both masks so the navy always wins over them.
+    // The tracts, under both masks so the navy always wins over them. The fill
+    // is all there is to them: it carries the population change.
     map.addSource('tracts', { type: 'geojson', data: {
-      type: 'Feature',
-      geometry: { type: 'MultiPolygon', coordinates: TRACTS.map(ring => [ring]) }
+      type: 'FeatureCollection',
+      features: TRACTS.map(([band00, band10, ring]) => ({
+        type: 'Feature',
+        properties: { band00, band10 },
+        geometry: { type: 'Polygon', coordinates: [ring] }
+      }))
     }});
-    map.addLayer({ id: 'tracts', type: 'line', source: 'tracts',
-                   paint: { 'line-color': CREAM, 'line-width': 1.2, 'line-opacity': 0,
-                            'line-opacity-transition': { duration: MASK_FADE_MS } } },
+    // The colour is a paint property like any other, so moving the map from one
+    // decade to the next crossfades on the same clock the fill came up on.
+    map.addLayer({ id: 'tracts-fill', type: 'fill', source: 'tracts',
+                   paint: { 'fill-color': bandColour('band00'),
+                            'fill-color-transition': { duration: MASK_FADE_MS },
+                            'fill-opacity': 0,
+                            'fill-opacity-transition': { duration: MASK_FADE_MS } } },
                  'mask-city');
 
     // A card may have fired before the style finished loading, so settle up now.
     layersReady = true;
     map.setPaintProperty('mask-circle', 'fill-opacity', curMask === 'circle' ? 1 : 0);
-    map.setPaintProperty('tracts', 'line-opacity', curTracts === 'on' ? TRACT_OPACITY : 0);
+    paintTracts(curTracts);
   });
 
   // The 18 buildings shuttered this year, as [lng, lat]. The source rows were
@@ -1255,12 +1580,22 @@
     [-81.6524,41.493664],   [-81.686779,41.478717], [-81.574155,41.553481]
   ];
 
+  // What became of each 2010-11 building, matching --reuse-* in the stylesheet.
+  const STATUS = {
+    'reused':     '#404f54',
+    'new school': '#ffffff',
+    'park':       '#d0d64c',
+    'empty lot':  '#e56430',
+    'vacant':     '#d64d4d'
+  };
+
   // Markers go in once and stay; CSS decides whether they are visible.
   function addClosureMarkers(list, variant) {
-    list.forEach(([lng, lat], i) => {
+    list.forEach(([lng, lat, status], i) => {
       const el = document.createElement('div');
       el.className = 'closure';
       el.style.setProperty('--i', i);                // drives the stagger in CSS
+      if (status) el.style.setProperty('--status', STATUS[status]);
       el.appendChild(Object.assign(document.createElement('span'),
         { className: 'closure-box closure-box--' + variant }));
       new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
@@ -1269,19 +1604,17 @@
   addClosureMarkers(CLOSURES, 'old');
   addClosureMarkers(CLOSURES_2026, 'new');
 
-  const photoEls = [...document.querySelectorAll('.photo')];
-  // Show the first `n` photos; the rest fade out.
-  function setPhotos(n) {
-    photoEls.forEach((el, i) => el.classList.toggle('is-visible', i < n));
-  }
-
   // The full-stage layers. 'map' is the absence of all of them, which is what
   // leaves the map itself showing, so it is a plate name like any other.
   const PLATES = {
     opener:  document.getElementById('plate-opener'),
     walker:  document.getElementById('plate-walker'),
     wright:  document.getElementById('plate-wright'),
-    wheeler: document.getElementById('plate-wheeler')
+    wheeler: document.getElementById('plate-wheeler'),
+    east:    document.getElementById('plate-east'),
+    keith:   document.getElementById('plate-keith'),
+    washington: document.getElementById('plate-washington'),
+    martin:  document.getElementById('plate-martin')
   };
 
   // Must outlast the .plate opacity transition, or the outgoing plate is dropped
@@ -1315,6 +1648,15 @@
 
     // The legend belongs to the map, so it hides whenever a plate covers it.
     document.body.classList.toggle('on-map', name === 'map');
+
+    // A plate that carries a clip plays only while it is the one on the stage.
+    // A looping clip is exactly what reduced motion asks us not to start.
+    for (const key in PLATES) {
+      const clip = PLATES[key].querySelector('video');
+      if (!clip) continue;
+      if (key === name && !reduceMotion) clip.play().catch(() => {});   // autoplay can be refused
+      else clip.pause();
+    }
   }
 
   // The montage chapter, which is the clip covering the screen; 'track' is the
@@ -1329,27 +1671,33 @@
   // the halfway point, with nothing of it on screen.
   const veil = document.getElementById('veil');
   const VEIL_MS = reduceMotion ? 0 : 550;
-  let veilTimer;
+  let veilTimer, turnTimer;
 
-  function turnScreen(toFullMap) {
+  function turnScreen(toFullMap, plate) {
     clearTimeout(veilTimer);
+    clearTimeout(turnTimer);
+    document.body.classList.add('turning');
     veil.classList.add('is-visible');
     veilTimer = setTimeout(() => {
       document.body.classList.toggle('on-fullmap', toFullMap);
+      // The stage the veil lifts on is the one the new chapter asks for, not
+      // the one the last chapter left behind. Cut, not faded: body.turning.
+      if (plate) applyPlate(plate);
       map.resize();                       // the container is a different shape now
       // The chapter opens on the school. Its first card says so as well, so
       // curView is set here too, which keeps that cue from flying there again.
       if (toFullMap) curView = 'collinwood';
       moveCamera(curView, 0);
       veil.classList.remove('is-visible');
+      turnTimer = setTimeout(() => document.body.classList.remove('turning'), VEIL_MS);
     }, VEIL_MS);
   }
 
-  function applyScreen(name) {
+  function applyScreen(name, plate) {
     if (name === curScreen) return;
     const prev = curScreen;
     curScreen = name;
-    if (name === 'fullmap' || prev === 'fullmap') turnScreen(name === 'fullmap');
+    if (name === 'fullmap' || prev === 'fullmap') turnScreen(name === 'fullmap', plate);
     montage.classList.toggle('is-visible', name === 'montage');
     // A looping clip is exactly what reduced motion asks us not to start; the
     // poster carries the chapter in that case.
@@ -1358,32 +1706,53 @@
     else montageVideo.pause();
   }
 
-  // The clip is full-screen the moment it arrives, so the fetch starts a couple
-  // of screens earlier instead of at the crossfade. It is a 33 MB file, though,
-  // so a reader who is paying for the bytes waits for the crossfade and reads
-  // the first card over the poster.
-  function warmMontage() {
-    if (reduceMotion || montageVideo.preload === 'auto') return;
+  // A clip is on screen the moment its chapter arrives, so the fetch starts a
+  // few screens earlier instead of at the crossfade. They are 33 MB and 27 MB,
+  // though, so a reader who is paying for the bytes waits for the crossfade
+  // instead and reads the first lines over the first frame.
+  function warmClip(name) {
+    if (reduceMotion) return;
+    const clip = name === 'montage' ? montageVideo
+                                    : PLATES[name] && PLATES[name].querySelector('video');
+    if (!clip || clip.preload === 'auto') return;
     const net = navigator.connection;
     if (net && (net.saveData || /2g/.test(net.effectiveType || ''))) return;
-    montageVideo.preload = 'auto';
-    montageVideo.load();
+    clip.preload = 'auto';
+    clip.load();
   }
 
-  // off = none, on = the 2010-11 wave, both = that wave plus this year's.
+  // off = none, on = the 2010-11 wave, both = that wave plus this year's,
+  // status = that wave again, each square coloured by what became of it.
   function applySquares(name) {
     if (name === curSquares) return;
     curSquares = name;
-    document.body.classList.toggle('closures-on', name === 'on' || name === 'both');
+    document.body.classList.toggle('closures-on', name !== 'off');
     document.body.classList.toggle('closures-new-on', name === 'both');
+    document.body.classList.toggle('closures-status', name === 'status');
   }
 
+  // -1, the tract with no population to take a percentage of, falls through to
+  // the fallback and draws nothing.
+  function bandColour(prop) {
+    return ['match', ['get', prop], 0, LOSS[0], 1, LOSS[1], 2, LOSS[2], 3, LOSS[3],
+            'rgba(0,0,0,0)'];
+  }
+
+  function paintTracts(name) {
+    const on = name !== 'off';
+    map.setPaintProperty('tracts-fill', 'fill-color',
+                         bandColour(name === '2010s' ? 'band10' : 'band00'));
+    map.setPaintProperty('tracts-fill', 'fill-opacity', on ? TRACT_FILL : 0);
+  }
+
+  // off, or the decade the fill is showing. The title rides on these classes.
   function applyTracts(name) {
     if (name === curTracts) return;
     curTracts = name;
-    if (layersReady) {
-      map.setPaintProperty('tracts', 'line-opacity', name === 'on' ? TRACT_OPACITY : 0);
-    }
+    document.body.classList.toggle('tracts-on', name !== 'off');
+    document.body.classList.toggle('decade-2000s', name === '2000s');
+    document.body.classList.toggle('decade-2010s', name === '2010s');
+    if (layersReady) paintTracts(name);
   }
 
   function applyMask(name) {
@@ -1394,22 +1763,41 @@
     }
   }
 
-  // The copy has its own column now, so the cutout just needs breathing room
-  // inside the stage rather than clearance from text laid over it.
-  function cityPadding() {
+  // In the two-track layout the map has the stage to itself and only wants
+  // breathing room inside it. In the closing chapter the copy rides over the
+  // map instead, in the rail's column on the right, so the camera is given a
+  // margin on that side to sit the city clear of the cards. Phones take the
+  // copy across the full width, where no horizontal margin would help, so they
+  // keep the even box.
+  const COPY_MARGIN = 0.26;        // of the window
+  function mapPadding() {
     const pad = window.innerWidth <= 900 ? 24 : 48;
-    return { top: pad, right: pad, bottom: pad, left: pad };
+    const box = { top: pad, right: pad, bottom: pad, left: pad };
+    if (curScreen === 'fullmap' && window.innerWidth > 900) {
+      box.right = Math.round(window.innerWidth * COPY_MARGIN);
+    }
+    return box;
   }
 
   // Where a view puts the camera, kept apart from the flight to it: the
   // full-screen chapter has to place the camera itself, at once and under the
   // veil, and to hand it back on the way out.
   function moveCamera(name, duration) {
-    const fitted = { padding: cityPadding(), duration, essential: true };
-    if (name === 'city')       return map.fitBounds(CITY_BOUNDS, fitted);
-    if (name === 'northeast')  return map.fitBounds(NE_BOUNDS, fitted);
+    const padding = mapPadding();
+    // fitBounds takes the box itself, and drops it again once it has worked out
+    // the camera. flyTo must never be given one: a padding passed to flyTo is
+    // kept on the camera, and MapLibre adds that stored padding to the padding
+    // of every later fit — which is how the city came to be fitted inside its
+    // own margin twice over, small and off to one side, two chapters earlier.
+    // The same shift as an offset is applied for that one move and left behind.
+    const offset = [(padding.left - padding.right) / 2, 0];
+    if (name === 'city')       return map.fitBounds(CITY_BOUNDS, { padding, duration, essential: true });
+    if (name === 'northeast')  return map.fitBounds(NE_BOUNDS, { padding, duration, essential: true });
+    if (name === 'eastside')   return map.fitBounds(EAST_BOUNDS, { padding, duration, essential: true });
     if (name === 'collinwood') return map.flyTo({ center: COLLINWOOD, zoom: COLLINWOOD_ZOOM,
-                                                  duration, essential: true });
+                                                  offset, duration, essential: true });
+    // No margin on the opener: the circle is cut around Fulton, so the camera
+    // has to sit on it squarely.
     map.flyTo({ center: FULTON, zoom: 17, duration, essential: true });
   }
 
@@ -1421,34 +1809,25 @@
 
   const cues = [...document.querySelectorAll('.cue')];
   const masthead = cues[0];
-  const firstPara = cues[1];
 
-  // Mark the cues that change what is on the stage, and those that change the
-  // screen itself. The CSS gives each the room it needs above: a crossfade that
-  // the next cue cannot cut short, and for a screen, a gap long enough that no
-  // copy is on the page while it turns.
+  // Mark the cues that change the screen itself; the CSS gives those a gap long
+  // enough that no copy is on the page while one turns. Plates need no such
+  // mark: they crossfade under copy that goes on reading.
   cues.forEach((el, i) => {
     const prev = cues[i - 1];
-    if (!prev) return;
-    if (el.dataset.plate  !== prev.dataset.plate)  el.classList.add('turn');
-    if (el.dataset.screen !== prev.dataset.screen) el.classList.add('screen-turn');
+    if (prev && el.dataset.screen !== prev.dataset.screen) el.classList.add('screen-turn');
   });
 
   scrollama()
     .setup({ step: '.cue', offset: 0.6 })
     .onStepEnter(({ element }) => {
       const d = element.dataset;
-      if (d.photos !== undefined) setPhotos(+d.photos);
       if (d.mask) applyMask(d.mask);
       if (d.view) applyView(d.view);
       if (d.squares) applySquares(d.squares);
       if (d.tracts) applyTracts(d.tracts);
       if (d.plate) applyPlate(d.plate);
-      if (d.warm) warmMontage();
-    })
-    .onStepExit(({ element, direction }) => {
-      // Scrolling back up above the first paragraph clears the photos again.
-      if (direction === 'up' && element === firstPara) setPhotos(0);
+      if (d.warm) warmClip(d.warm);
     });
 
   // The screen turns in the gap between one chapter's copy and the next, rather
@@ -1461,23 +1840,36 @@
   cues.forEach((el, i) => {
     const prev = cues[i - 1];
     if (prev && el.dataset.screen !== prev.dataset.screen) {
-      boundaries.push({ last: prev, screen: el.dataset.screen, passed: false });
+      boundaries.push({ last: prev, screen: el.dataset.screen,
+                        plate: el.dataset.plate, passed: false });
     }
   });
 
   // Derived rather than toggled, so each boundary can report on its own and the
   // piece still starts on the screen the first cue asks for however they fire.
-  function settleScreen() {
+  function settleScreen(plate) {
     let screen = cues[0].dataset.screen;
     for (const b of boundaries) if (b.passed) screen = b.screen;
-    applyScreen(screen);
+    applyScreen(screen, plate);
+  }
+
+  // Crossing a boundary forwards, the stage belongs to the chapter being
+  // entered. Coming back the other way there is no such cue, so the stage
+  // belongs to whatever the reader has come back up to.
+  function plateAtReadingLine() {
+    let plate = cues[0].dataset.plate;
+    for (const el of cues) {
+      if (el.getBoundingClientRect().top > window.innerHeight * 0.6) break;
+      plate = el.dataset.plate;
+    }
+    return plate;
   }
 
   boundaries.forEach(b => {
     new IntersectionObserver(([entry]) => {
       // Gone off the top, as opposed to not yet arrived at the foot.
       b.passed = !entry.isIntersecting && entry.boundingClientRect.bottom <= 0;
-      settleScreen();
+      settleScreen(b.passed ? b.plate : plateAtReadingLine());
     }, { threshold: 0 }).observe(b.last);
   });
 
