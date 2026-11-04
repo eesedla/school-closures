@@ -296,6 +296,11 @@
                  display: grid; place-content: center;
                  transform: translateY(5vh); }   /* and this one rises from below */
   .shot.is-visible { opacity: 1; transform: none; }
+  /* Having risen into place, it carries on up the window as it goes rather
+     than sinking back to where it came from. The class is put on at the beat
+     that takes it off, so only a picture that has been on the screen leaves
+     this way. */
+  .shot--solo.is-gone { transform: translateY(-5vh); }
   /* Sized by height, which keeps the three of them the same size on the screen
      whatever shape they were taken in, and leaves the figure as wide as the
      picture. That width is known before the file arrives: each picture carries
@@ -465,7 +470,7 @@
     .closure-box, .plate,
     .montage, .screen, .shot, .veil, .map-title-head { transition: none; }   /* hard-cut, no crossfade */
     .shot--left, .shot--right,
-    .shot--solo { transform: none; }   /* fade in place, no drift and no rise */
+    .shot--solo, .shot--solo.is-gone { transform: none; }   /* fade in place */
     body.closures-on .closure-box { transition-delay: 0ms; }
   }
 </style>
@@ -1879,7 +1884,15 @@
     if (name === curShot) return;
     curShot = name;
     const up = SHOT_BEATS[name] || [];
-    for (const key in SHOTS) SHOTS[key].classList.toggle('is-visible', up.includes(key));
+    for (const key in SHOTS) {
+      const shot = SHOTS[key], on = up.includes(key);
+      // Read before the class is changed: a picture that is on the screen now
+      // and will not be after this beat is one that is leaving, and it leaves
+      // the way it was read rather than backing out the way it came.
+      if (!on && shot.classList.contains('is-visible')) shot.classList.add('is-gone');
+      if (on) shot.classList.remove('is-gone');
+      shot.classList.toggle('is-visible', on);
+    }
   }
 
   // Must outlast the .screen opacity transition, for the reason applyPlate
