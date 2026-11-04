@@ -38,6 +38,11 @@
        pace. Nothing is on the page while the screen changes, and the copy that
        follows scrolls in afterwards instead of arriving in the middle of it. */
     --screen-gap: 150vh;
+    /* The width the document actually has. The full-window copy the piece opens
+       with is laid out against it rather than against 100vw, which counts the
+       scrollbar: a paragraph that wide would push a horizontal one out at the
+       other side. The script measures it; this is what holds until it does. */
+    --win: 100vw;
   }
 
   body { margin: 0; background: #fff;
@@ -61,48 +66,53 @@
      column as well, so it sits above the whole stage instead. See below. */
   /* z-index 2 is the resting level; the incoming plate is raised to 3 in script
      so it can fade in over the outgoing one instead of alongside it. */
-  .plate { position: absolute; inset: 0; margin: 0; z-index: 2;
+  /* White, not transparent: a photograph is shown whole now, so there is stage
+     left over around it, and the map is live behind every plate — without a
+     background of its own a plate would be a window onto it. White rather than
+     the navy behind the map, so the picture sits on the same sheet the copy
+     column does. */
+  .plate { position: absolute; inset: 0; margin: 0; z-index: 2; background: #fff;
            opacity: 0; transition: opacity 1s ease; pointer-events: none; }
   .plate.is-visible { opacity: 1; }
-  .plate img, .plate video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .plate img { display: block; width: 100%; height: 100%; }
+  /* Photographs keep the shape they were taken in and sit inside the stage,
+     held off its edges so the white runs all the way round them. The inset is
+     in vh on all four sides rather than a percentage, so it measures the same
+     on the sides as it does top and bottom. */
+  .plate img   { object-fit: contain; padding: 3vh; box-sizing: border-box; }
 
-  /* Per-photo crop, keyed on the filename the way the conventions key theirs on
-     data-bg, so it lapses if the photo is ever swapped rather than silently
-     mis-cropping its replacement. cover on this portrait-shaped stage throws
-     away 41% of a landscape frame's width (47% on a phone), and centred that
-     cuts Kisha out of her own picture. 22% holds both figures and their joined
-     hands; the cost is the school's entrance columns at the right edge. */
-  .plate img[src*="MSI_6934"] { object-position: 22% center; }
+  /* ---- a plate with a line under it ----
+     The picture gives the bottom of the stage up to its caption and a little
+     more besides, so a captioned photograph sits visibly smaller than one that
+     has the stage to itself. The grid column is sized by what is in it: the
+     picture decides how wide that is, because the caption is zero wide and
+     then takes whatever the column turns out to be — the same arrangement as
+     the photographs on the white sheets. Height in vh rather than a share of
+     the plate, which the picture is itself what decides. */
+  .plate--cap { display: grid; grid-template-columns: auto;
+                justify-content: center; align-content: center;
+                padding: 3vh 3vh 2.6vh; box-sizing: border-box; }
+  .plate--cap img { width: auto; height: auto; padding: 0;
+                    max-height: 78vh; max-width: 48vw; }
+  .plate--cap--small img { max-height: 68vh; }
+  .plate--cap figcaption { width: 0; min-width: 100%;
+                           margin-top: .9rem; font-size: 14px; line-height: 1.5;
+                           color: var(--gray); }
 
-  /* Two photographs sharing a plate, halving the stage between them. The navy
-     is the plate's own, not the stage showing through: the map is live behind
-     every plate, so the hairline between the two photographs would be a window
-     onto it, and so would either photograph's box before it has loaded. Each is
-     3:2 in a half-stage twice that wide, so a quarter of their height goes;
-     held above centre, which keeps Bickerstaff's head in the upper frame and
-     the head of the yearbook spread in the lower one. */
-  .plate--stack { display: grid; grid-template-rows: 1fr 1fr; gap: 3px;
-                  background: var(--navy); }
+  /* Two photographs sharing a plate, halving the stage between them, each
+     inside its own half. No gap of its own: the inset on each photograph is
+     what holds them apart, and the plate's white shows between. */
+  .plate--stack { display: grid; grid-template-rows: 1fr 1fr; }
   .plate--stack img { height: 100%; min-height: 0; }
-  .plate img[src*="Cleveland-Closed-Schools-East-High"] { object-position: center 35%; }
-  /* The school is a reflection in a puddle, off to the left of the frame, and
-     covering this stage throws away a third of the width. Held at 30% so the
-     reflection stays whole; what goes is empty pavement at the right. */
-  .plate img[src*="MSI_3040"] { object-position: 30% center; }
-  /* A portrait with her head close to the top of the frame. Covering this stage
-     takes a third of the height, and taking it evenly would cut the top off her
-     headwrap, so the crop is held to the top and spends the loss on her shirt. */
-  .plate img[src*="Cleveland-School-Closings-40"] { object-position: center top; }
-  /* A plate carrying a clip keeps its own navy: there is a moment before the
-     first frame paints, and the map is live behind every plate. */
-  .plate--clip { background: var(--navy); }
-  /* Mt. Auburn is a 16:9 picture letterboxed into a 16:10 file, with 80px of
-     black baked into the top and the bottom — 5% of the height each. Covering
-     the stage fills it with the whole frame, bars and all, so the clip is
-     scaled past them instead: 1.125 clears both with a few pixels to spare.
-     The extra width it costs is cropped by the stage, which was cropping width
-     anyway. The poster rides along and is cropped a little harder for it. */
-  .plate--clip video { transform: scale(1.125); }
+  /* A stacked pair with the caption between the two pictures rather than under
+     them. The caption is the figure's last child, which is where the markup has
+     to put it, and the middle row is where it belongs; each picture takes a
+     little over a third of the window so the three fit the stage together. */
+  .plate--stack.plate--cap { grid-template-rows: auto auto auto; row-gap: .9rem; }
+  .plate--stack.plate--cap img { max-height: 34vh; }
+  .plate--stack.plate--cap img:first-of-type { grid-row: 1; }
+  .plate--stack.plate--cap figcaption { grid-row: 2; margin-top: 0; }
+  .plate--stack.plate--cap img:last-of-type  { grid-row: 3; }
 
   /* While the veil is down the stage cuts rather than crossfades. A plate still
      fading when the veil lifts would be the chapter before showing through the
@@ -215,13 +225,23 @@
   /* The one gap in the rail that is not a card's: the run of empty rail a
      full-screen chapter needs on either side of it. */
   .cue.screen-turn { margin-top: var(--screen-gap); }
+  /* One turn is not taken that way: the map's. Its paragraph is what the map
+     is there for, so rather than waiting out the fade below the fold it comes
+     up the window over the white sheet — the same white the column is on
+     anyway, so nothing of the turn shows in the copy — and the sheet lifts
+     under it at the moment it reaches the reading line. That is what the gap
+     above it is set to: the 60vh the sheet's own cue is read at, so the lift
+     and the paragraph's arrival are the same instant and no bare map is ever
+     on the screen. */
+  .cue.turn--over { margin-top: 60vh; }
+  /* The paragraph under it is on the screen for the fade as well, so it crosses
+     the turn the same way rather than appearing out of the white at the end. */
+  .cue.turn--over, .cue.turn--over + .para { position: relative; z-index: 5; }
   /* Section subhead, after Signal's p.jw-item-sub: condensed bold, and it sits
      tight above its own copy rather than taking a full scroll gap. */
   .section-head { font-family: var(--font-heading); font-weight: 700;
                   font-size: clamp(24px, 2.6vw, 34px); line-height: 1.15;
                   margin: 0 0 1.3rem; }
-  .pivot-lead { font-family: var(--font-heading); font-weight: 700;
-                font-size: clamp(26px, 3vw, 38px); line-height: 1.2; }
   /* An image set into the copy column itself, as opposed to a .plate on the
      stage. It takes the paragraph measure so its edges line up with the text,
      and width/height on the <img> reserve its space before it loads. It sits in
@@ -229,12 +249,17 @@
      break so it reads as a figure and not as an interruption. */
   .rail-figure { margin: 2.6em 0 2.8em; max-width: 34em; }
   .rail-figure img { display: block; width: 100%; height: auto; }
+  /* The same line a plate's caption is set in, at the paragraph measure the
+     figure already has. */
+  .rail-figure figcaption { margin-top: .8rem; font-size: 14px; line-height: 1.5;
+                            color: var(--gray); }
 
   /* ---- the montage chapter ----
      One chapter drops the two-track layout: the clip takes the whole screen and
      the copy rides over it on cards. The clip is a fixed layer rather than a
      plate because it has to cover the copy column too, so it sits above the
-     stage at 3, and the cards above that at 4. */
+     stage at 3 — 4 while it is the sheet arriving — and the copy above that
+     at 5. It is one of the screens below: see .screen. */
   .montage { position: fixed; inset: 0; z-index: 3; background: var(--navy);
              opacity: 0; transition: opacity 1.1s ease; pointer-events: none; }
   .montage.is-visible { opacity: 1; }
@@ -244,10 +269,73 @@
      at either end of the chapter still read while the screen is mid-crossfade,
      over the map or a photograph. They scroll 1:1 like the paragraphs in the
      rail; the clip behind them is the only thing moving on its own. */
-  .card { position: relative; z-index: 4; max-width: 30em;
+  .card { position: relative; z-index: 5; max-width: 30em;
           margin: 0 0 38vh; padding: 1.4rem 1.6rem;
           background: rgba(26,27,46,.84); box-shadow: var(--card-shadow);
           color: #fff; font-size: clamp(18px, 1.9vw, 21px); line-height: 1.75; }
+
+  /* ---- the white sheets ----
+     The piece opens on a white sheet laid over both tracks and closes on
+     another, the same device as the montage chapter's clip, at 3 — 4 while it
+     is the sheet arriving, so the stage cannot show through the middle of a
+     crossfade. Copy crosses it, then it is empty, then the photographs come and
+     go on it one beat at a time. It is white because what it opens onto is the
+     sheet the copy column is already on. */
+  .screen { position: fixed; inset: 0; z-index: 3; background: #fff;
+            opacity: 0; transition: opacity 1.1s ease; pointer-events: none; }
+  .screen.is-visible { opacity: 1; }
+
+  /* The photographs on it. Each has a cell of its own so the first holds its
+     half of the window whether the second has arrived yet or not, and the one
+     that comes alone spans both. The row is the only one, centred in the
+     window, and every figure is centred in its cell. */
+  .screen--shots { display: grid; grid-template-columns: 1fr 1fr;
+                   align-content: center; justify-items: center; align-items: center; }
+  /* Each drifts in from its own side as it fades, so which of the two came
+     first is something the reader sees rather than has to notice. */
+  .shot { grid-row: 1; margin: 0;
+          opacity: 0; transition: opacity .9s ease, transform .9s ease; }
+  .shot--left  { grid-column: 1; transform: translateX(-3vw); }
+  .shot--right { grid-column: 2; transform: translateX(3vw); }
+  .shot--solo  { grid-column: 1 / 3; }
+  .shot.is-visible { opacity: 1; transform: none; }
+  /* Sized by height, which keeps the three of them the same size on the screen
+     whatever shape they were taken in, and leaves the figure as wide as the
+     picture. That width is known before the file arrives: each picture carries
+     its own pixel dimensions, which is what fixes the ratio. The width it is
+     held to on a narrow window is in vw rather than a share of the figure,
+     which the picture is itself what decides. */
+  /* Both sides are a maximum rather than one of them a height: a picture given
+     a height and then held to a width is squashed into it, since the height it
+     was told to take stays put. With width and height both free, the picture
+     takes whichever of the two bounds it meets first and keeps its shape. */
+  .shot img { display: block; width: auto; height: auto;
+              max-height: 56vh; max-width: 38vw; }
+  .shot--solo img { max-width: 56vw; }
+  /* The caption takes the measure of the picture above it. Zero wide so that
+     its own longest line has no say in how wide the figure is — the picture
+     decides that — and then the full width of whatever the figure turns out
+     to be. */
+  .shot figcaption { width: 0; min-width: 100%;
+                     margin-top: .9rem; font-size: 14px; line-height: 1.5;
+                     color: var(--gray); }
+
+  /* Copy that crosses the whole window instead of riding in its column. The
+     rail is the right-hand 45% of the window with 5vw of padding inside it, so
+     the paragraph is pulled back by exactly that and given the window's own
+     width; its column is then centred in that by padding rather than by a
+     measure, so the text lands in the middle of the screen and not of the
+     track it is still in. */
+  .plain { position: relative; z-index: 5; max-width: none; box-sizing: border-box;
+           width: var(--win); margin-left: calc(-0.55 * var(--win) - 5vw);
+           padding-inline: max(7vw, calc(var(--win) / 2 - 17em)); }
+
+  /* The photographs have no copy of their own, so each beat of them is marked
+     by an empty cue, and the gap above it is how long the beat before it lasts.
+     The last one is taller: its own height is the white the sheet holds after
+     the last photograph has gone, before it lifts on the map. */
+  .hold { height: 10vh; margin-top: 110vh; }
+  .hold--last { height: 60vh; }
 
   /* ---- the full-screen map chapter ----
      The close takes the whole window as well, but with the map in it rather
@@ -257,7 +345,7 @@
      paints, so it is most of what is on screen at either end of the turn.
      Only .stage moves. Its column keeps its box in the grid, so no track
      reflows and the reader keeps their place in the page. */
-  .veil { position: fixed; inset: 0; z-index: 5; background: var(--navy);
+  .veil { position: fixed; inset: 0; z-index: 6; background: var(--navy);
           opacity: 0; transition: opacity .55s ease; pointer-events: none; }
   .veil.is-visible { opacity: 1; }
   /* Its own navy while it is out of its column: the canvas takes a frame to
@@ -299,13 +387,29 @@
     .masthead { padding-top: 7vh; margin-bottom: 48vh; }
     .para { max-width: none; }
     .card { max-width: none; }
+    /* One column, so the rail already starts at the left edge: only its own
+       padding has to be given back. */
+    .plain { margin-left: -7vw; padding-inline: 7vw; }
+    /* Two pictures side by side on a phone are narrow, so each takes nearly
+       all of its half — the width is what limits them here, not the height —
+       and the caption sets smaller under it. */
+    /* The stage is only 58vh here and the caption, set to the width of a
+       picture that is itself narrow, runs to three or four lines, so the
+       picture gives up more of the stage than it does on a wide screen. */
+    .plate--cap img { max-height: 36vh; max-width: 86vw; }
+    .plate--cap--small img { max-height: 32vh; }
+    .plate--cap figcaption { font-size: 13px; }
+    .shot img { max-height: 40vh; max-width: 44vw; }
+    .shot--solo img { max-width: 86vw; }
+    .shot figcaption { font-size: 13px; }
     .entry-title { font-size: clamp(30px, 8vw, 42px); }
 
   }
 
   @media (prefers-reduced-motion: reduce) {
     .closure-box, .plate,
-    .montage, .veil, .map-title-head { transition: none; }   /* hard-cut, no crossfade */
+    .montage, .screen, .shot, .veil, .map-title-head { transition: none; }   /* hard-cut, no crossfade */
+    .shot--left, .shot--right { transform: none; }   /* fade in place, no drift */
     body.closures-on .closure-box { transition-delay: 0ms; }
   }
 </style>
@@ -320,52 +424,54 @@
       <div id="map"></div>
 
       <!-- Visible from the start, so the map is never glimpsed before JS runs. -->
-      <figure class="plate is-visible" id="plate-opener">
+      <figure class="plate plate--cap is-visible" id="plate-opener">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_8443-scaled.jpg"
-             alt="" loading="eager" decoding="async">
+             alt="" width="2048" height="2560" loading="eager" decoding="async">
+        <figcaption>The South High School building is now owned by the City of Cleveland and used to train public safety workers.</figcaption>
       </figure>
 
-      <figure class="plate" id="plate-walker">
+      <figure class="plate plate--cap plate--cap--small" id="plate-walker">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_6970-scaled.jpg"
-             alt="" loading="lazy" decoding="async">
+             alt="" width="2048" height="2560" loading="lazy" decoding="async">
+        <figcaption>Erik Walker in front of the Robert Fulton Elementary School building down the street from his home.</figcaption>
       </figure>
 
-      <figure class="plate" id="plate-wright">
+      <figure class="plate plate--cap" id="plate-wright">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_6934-scaled.jpg"
-             alt="" loading="lazy" decoding="async">
+             alt="" width="2560" height="1703" loading="lazy" decoding="async">
+        <figcaption>Harris McMichael and his wife Kisha Clark-McMichael walk toward the Robert Fulton Elementary School building across from their home.</figcaption>
       </figure>
 
-      <figure class="plate plate--stack" id="plate-east">
+      <figure class="plate plate--stack plate--cap" id="plate-east">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/10/Cleveland-Closed-Schools-East-High-School-3-scaled.jpg"
-             alt="" loading="lazy" decoding="async">
+             alt="" width="2560" height="1707" loading="lazy" decoding="async">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/10/Cleveland-Closed-Schools-East-High-School-2-scaled.jpg"
-             alt="" loading="lazy" decoding="async">
+             alt="" width="2560" height="1707" loading="lazy" decoding="async">
+        <figcaption>Doreen Bickerstaff flips through the yearbook from her senior year, 1978, at East High School on the dining table at her mother’s house across from the school in Cleveland on Wednesday, Oct. 15, 2026.</figcaption>
       </figure>
 
-      <figure class="plate" id="plate-keith">
+      <figure class="plate plate--cap" id="plate-keith">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3040-scaled.jpg"
-             alt="" loading="lazy" decoding="async">
+             alt="" width="2560" height="1703" loading="lazy" decoding="async">
+        <figcaption><span class="tk">Placeholder caption</span></figcaption>
       </figure>
 
-      <!-- Mt. Auburn, the school across the street from both women. The poster
-           is the still of it from Washington's porch that the copy column shows
-           a few paragraphs earlier, so the stage is full of the right building
-           from the first frame, cached, while the 27 MB clip catches up. -->
-      <figure class="plate plate--clip" id="plate-martin" aria-hidden="true">
-        <video muted loop playsinline preload="metadata"
-               poster="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-6-scaled.jpg">
-          <source src="https://signalcleveland.org/wp-content/uploads/2026/10/Mt-Auburn-Junior-High.mp4" type="video/mp4">
-        </video>
+      <figure class="plate plate--cap plate--cap--small" id="plate-martin">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_0344-scaled.jpg"
+             alt="" width="2048" height="2560" loading="lazy" decoding="async">
+        <figcaption>Tiffany Martin grew up down the street from Mt. Auburn Elementary School. After living in Georgia for a few years, she and her children moved back to the neighborhood just a few houses down from the now-vacant school.</figcaption>
       </figure>
 
-      <figure class="plate" id="plate-washington">
-        <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-40-scaled.jpg"
-             alt="" loading="lazy" decoding="async">
+      <figure class="plate plate--cap" id="plate-washington">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-33-scaled.jpg"
+             alt="" width="2560" height="1703" loading="lazy" decoding="async">
+        <figcaption>Clarice Washington has lived across from Mt. Auburn Elementary School for more than 30 years.</figcaption>
       </figure>
 
-      <figure class="plate" id="plate-wheeler">
-        <img src="https://signalcleveland.org/wp-content/uploads/2026/10/20260326_GregWheeler_CollinwoodHighSchool-5-scaled.jpg"
-             alt="" loading="lazy" decoding="async">
+      <figure class="plate plate--cap" id="plate-wheeler">
+        <img src="https://signalcleveland.org/wp-content/uploads/2026/10/20260326_GregWheeler_CollinwoodHighSchool-3-scaled.jpg"
+             alt="" width="2560" height="1703" loading="lazy" decoding="async">
+        <figcaption>Greg Wheeler, an alumni of the now-closed Collinwood High School, drives through several of Cleveland’s east side neighborhoods pointing out places where school buildings used to stand and reflecting on how the loss of them has impacted the community on March 26, 2026.</figcaption>
       </figure>
 
       <div class="legend" id="legend" aria-hidden="true">
@@ -394,13 +500,14 @@
   </div>
 
   <!-- RIGHT TRACK: the copy. Every .cue declares the state it wants, so scrolling
-       back up reverses for free: data-mask = circle | city,
-       data-view = close | city, data-squares = on | off,
-       data-screen = track | montage.
-       Leaving the headline behind is what crossfades the opener into the map. -->
+       back up reverses for free: data-view = city | collinwood | northeast |
+       eastside, data-squares = off | on | both | status, data-tracts = off |
+       2000s | 2010s, data-plate = map | one of the photographs, and
+       data-screen = track | open | montage | fullmap, and on the opening
+       sheet data-shot = none | left | pair | solo. -->
   <div class="rail">
 
-    <header class="cue masthead" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="opener">
+    <header class="cue masthead" data-view="city" data-squares="off" data-tracts="off" data-screen="track" data-plate="opener">
       <h1 class="entry-title">How closing a school changes a community</h1>
       <p class="entry-subhead">Old buildings, faded bricks and the fallout of a school closure</p>
       <div class="entry-meta">
@@ -411,202 +518,228 @@
       </div>
     </header>
 
-    <p class="cue para" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">The abandoned Robert Fulton Elementary school is the tallest building around for blocks. Stand anywhere in the neighborhood and its chimney remains visible on the horizon.</p>
+    <!-- The piece opens on a white sheet over both tracks and stays on it for
+         six beats: the copy, white, the first photograph, the second beside
+         it, white, the third, white. The stage is behind it the whole way,
+         which is where it swaps the opening photograph for the map — covered,
+         rather than crossfading in front of the reader as the headline
+         leaves — and where the squares wait until the sheet has lifted. -->
+    <p class="cue para plain" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="none">The abandoned Robert Fulton Elementary is the tallest building for blocks. Stand anywhere in the neighborhood and its chimney looms on the horizon.</p>
 
-    <p class="cue para" data-mask="circle" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">Neighbors say, when it was open, Fulton was a good school filled with good teachers. Today, the staircase inside the building has wholly collapsed. Its windows, where not covered in greying plywood, are broken. A sapling has taken root in one of its gutters.</p>
+    <p class="cue para plain" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="none">Neighbors say, when it was open, Fulton was a good school. Today, the staircase inside the building has mostly collapsed. Its windows, where not covered in greying plywood, are broken. A tree grows in one of its gutters.</p>
 
-    <p class="cue para pivot-lead" data-mask="city" data-view="close" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">Fulton isn’t unique.</p>
+    <p class="cue para plain" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="none">Fulton isn’t unique. This summer — against the backdrop of the decision to shutter the largest number of schools in Cleveland’s history — we set out to learn how school closures ripple into nearby neighborhoods by looking at closures from fifteen years ago. We analyzed census data, knocked on doors and went to block club meetings. What we found is that in most places the closures, like Fulton’s chimney, cast long shadows.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="off" data-tracts="off" data-screen="track" data-plate="map">This summer — against the backdrop of the decision to shutter the largest number of schools in Cleveland's history — Signal Cleveland set out to learn how school closures ripple into nearby neighborhoods. We analyzed census data, knocked on doors and went to block club meetings. What we found is that in most places the closures, like Fulton’s chimney, cast long shadows.</p>
+    <!-- The photographs have no copy to read, so each beat of them is an empty
+         cue. The last one is what the sheet lifts on: the screen turns as it
+         leaves the top of the window, and the squares wait for the paragraph
+         below, so they come up on the map once the reader can see it. -->
+    <div class="cue hold" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="left" aria-hidden="true"></div>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="map" data-warm="montage">We narrowed in on a wave of 16 school closures from 2010 and 2011. In census tracts where schools closed during that time population fell by an average of 17% over the next decade. At the same time, the population in areas without closures declined by only 0.5% during the same period. And even reuse of school buildings didn’t necessarily stem these declines.</p>
+    <div class="cue hold" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="pair" aria-hidden="true"></div>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="map">These numbers can’t tell the whole story of what these schools meant, but the people who stayed can. We had conversations with over 30 neighbors who live around these schools — and in many cases attended them. They told us these schools functioned as civic institutions and sites of memory and that their closures affected their quality of life.</p>
+    <div class="cue hold" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="none" aria-hidden="true"></div>
+
+    <div class="cue hold" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="solo" aria-hidden="true"></div>
+
+    <div class="cue hold hold--last" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="map" data-shot="none" aria-hidden="true"></div>
+
+    <p class="cue para turn--over" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="map" data-warm="montage">We narrowed in on a wave of 16 school closures from 2010 and 2011. In census tracts where schools closed during that time population fell by an average of 17% over the next decade. At the same time, the population in areas without closures declined by only 0.5% during the same period. And even reuse of school buildings didn’t necessarily stem these declines.</p>
+
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="map">These numbers can’t tell the whole story of what these schools meant, but the people who stayed can. We had conversations with over 30 neighbors who live around these schools — and in many cases attended them. They told us these schools functioned as civic institutions and sites of memory and that their closures affected their quality of life.</p>
 
     <!-- The montage chapter. Every cue in it asks for the clip, so the screen
          still turns over if the opening line is scrolled past too fast to
          register, and every one asks for Walker's portrait, which settles onto
          the stage behind the clip so the chapter can fade straight back to it. -->
-        <h2 class="cue section-head card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Kisha and Harris McMichael’s home sits face to face with Fulton.</h2>
+        <h2 class="cue section-head card" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Kisha and Harris McMichael’s home sits face to face with Fulton.</h2>
 
-    <p class="cue card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Kisha attended Fulton and can't help but think fondly of how it used to be. She remembers its playground filled with kids and a report she wrote on the school's namesake, Robert Fulton, who is credited with inventing the steamboat. Now, the school’s hulking shell is a source of bitterness to the point that Kisha’s voice strains and catches a bit while discussing it.</p>
+    <p class="cue card" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Kisha attended Fulton and can't help but think fondly of how it used to be. She remembers its playground filled with kids and a report she wrote on the school's namesake, Robert Fulton, who is credited with inventing the steamboat. Now, the school’s hulking shell is a source of bitterness to the point that Kisha’s voice strains and catches a bit while discussing it.</p>
 
-    <p class="cue card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">“It's just disappointing,” she said. “You know, Robert Fulton was a good school.”</p>
+    <p class="cue card" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">“It's just disappointing,” she said. “You know, Robert Fulton was a good school.”</p>
 
-    <p class="cue card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">The couple lives in the home where Kisha grew up. But it’s almost been entirely rebuilt following a house fire in 2015. Listening to Harris, who works in construction, talk through the process of rebuilding the house himself — including drawing his own blueprints — it’s clear what he’s poured into the home. That only adds to his frustration when it comes to Fulton, which Harris sees as a hurdle to selling or renting the couple’s house some day.</p>
+    <p class="cue card" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">The couple lives in the home where Kisha grew up. But it’s almost been entirely rebuilt following a house fire in 2015. Listening to Harris, who works in construction, talk through the process of rebuilding the house himself — including drawing his own blueprints — it’s clear what he’s poured into the home. That only adds to his frustration when it comes to Fulton, which Harris sees as a hurdle to selling or renting the couple’s house some day.</p>
 
-    <p class="cue card" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">“Look over there,” Harris said, gesturing in the direction of the school. “It depreciates the value of our home, of everything.”</p>
+    <p class="cue card" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">“Look over there,” Harris said, gesturing in the direction of the school. “It depreciates the value of our home, of everything.”</p>
 
-    <p class="cue card card--last" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Fulton closed in 2010 after serving the community for more than 80 years. In 2021, the city awarded the building to a suburban development firm for use as housing, but that deal fell apart, district records show. For now, the building remains on the school district’s books, with no plans to tear it down anytime soon.</p>
+    <p class="cue card card--last" data-view="city" data-squares="on" data-tracts="off" data-plate="walker" data-screen="montage">Fulton closed in 2010 after serving the community for more than 80 years. In 2021, the city awarded the building to a suburban development firm for use as housing, but that deal fell apart, district records show. For now, the building remains on the school district’s books, with no plans to tear it down anytime soon.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Down the block, Erick Walker, who like Kisha went to Fulton, has been trying to get answers about the school for a long time. The neat blue  home he lives in now has been in his family since he moved there with his mother and sister as a 12-year-old. He’s now in his late fifties.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Down the block, Erick Walker, who like Kisha went to Fulton, has been trying to get answers about the school for a long time. The neat blue  home he lives in now has been in his family since he moved there with his mother and sister as a 12-year-old. He’s now in his late fifties.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">He’s spent the last six years advocating for answers about the school. That means attending city council meetings, writing to the mayor and being interviewed by the TV news. He even launched a city council campaign in 2024 with the hope it might nudge some action on the school.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">He’s spent the last six years advocating for answers about the school. That means attending city council meetings, writing to the mayor and being interviewed by the TV news. He even launched a city council campaign in 2024 with the hope it might nudge some action on the school.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Watching Fulton deteriorate bothers Walker. He knows it’s a drag on the neighborhood’s property values. But it also goes deeper than that, for him the school is also a symbol of how his community has been neglected.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Watching Fulton deteriorate bothers Walker. He knows it’s a drag on the neighborhood’s property values. But it also goes deeper than that, for him the school is also a symbol of how his community has been neglected.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">“It’s frustration that nobody seems to do anything about it,” he said. “It’s anger that I’m being ignored. That whomever the powers may be doesn’t value our community enough to do anything about it.”</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">“It’s frustration that nobody seems to do anything about it,” he said. “It’s anger that I’m being ignored. That whomever the powers may be doesn’t value our community enough to do anything about it.”</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Over the years, since Fulton closed, Walker and the McMichael’s have watched the blocks around the school change. From 2010 to 2024 the census tract containing the school — an Oklahoma shaped area bordered by Milverton Rd. and Kinsman Ave on the north and south sides and by East 140th and East 149th on the west and east sides — lost a third of its residents.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">Over the years, since Fulton closed, Walker and the McMichael’s have watched the blocks around the school change. From 2010 to 2024 the census tract containing the school — an Oklahoma shaped area bordered by Milverton Rd. and Kinsman Ave on the north and south sides and by East 140th and East 149th on the west and east sides — lost a third of its residents.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">They believe that closure of the school had “absolutely” something to do with that decline. At one point this winter, Walker called a senior neighbor of his to check up on her only to learn she’d moved away, a decision she blamed on crime and Fulton’s closure.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="walker">They believe that closure of the school had “absolutely” something to do with that decline. At one point this winter, Walker called a senior neighbor of his to check up on her only to learn she’d moved away, a decision she blamed on crime and Fulton’s closure.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Catherine Wright is that neighbor. She remembers the school changing the neighborhood greatly, in part because when Fulton closed, “the joy and laughter of children coming up and down the street” disappeared.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Catherine Wright is that neighbor. She remembers the school changing the neighborhood greatly, in part because when Fulton closed, “the joy and laughter of children coming up and down the street” disappeared.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">“The police car was there, so the kids wouldn't get hurt,” she told Signal Cleveland. “We had a school crossing guard that was at the end of the street…kids were able to go to the store. It was actually really, really safe.”</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">“The police car was there, so the kids wouldn't get hurt,” she told Signal Cleveland. “We had a school crossing guard that was at the end of the street…kids were able to go to the store. It was actually really, really safe.”</p>
 
     <figure class="rail-figure">
       <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3214-scaled.jpg"
            alt="" width="2560" height="1703" loading="lazy" decoding="async">
+      <figcaption><span class="tk">Placeholder caption</span></figcaption>
     </figure>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Then there’s all the negative attention the empty school has attracted since it closed. People will routinely break into Fulton and dump trash including mattresses and pieces of furniture on the school grounds, Harris said. White also recalls watching birds of prey flying over the building in long, lazy circles presumably attracted by something, like a dead animal, decaying inside.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Then there’s all the negative attention the empty school has attracted since it closed. People will routinely break into Fulton and dump trash including mattresses and pieces of furniture on the school grounds, Harris said. White also recalls watching birds of prey flying over the building in long, lazy circles presumably attracted by something, like a dead animal, decaying inside.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Since the city began publicly logging 311 calls in summer of 2017 there have been over <span class="tk">xx</span> calls for illegal dumping in a radius just a quarter mile out from Fulton. The feeling of deteriorating safety has gotten so bad to the point where Kisha no longer visits the corner store she used to love.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">Since the city began publicly logging 311 calls in summer of 2017 there have been over <span class="tk">xx</span> calls for illegal dumping in a radius just a quarter mile out from Fulton. The feeling of deteriorating safety has gotten so bad to the point where Kisha no longer visits the corner store she used to love.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">At this point, Fulton’s neighbors just want the building torn down. They’re sick and tired of reporting break-ins, illegal dumping and people setting off fireworks on the Fourth of July. They’re also worried that at some point they’ll have to call about something more serious than a mound of old tires or someone coming to steal the wrought iron fence piece by piece.</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">At this point, Fulton’s neighbors just want the building torn down. They’re sick and tired of reporting break-ins, illegal dumping and people setting off fireworks on the Fourth of July. They’re also worried that at some point they’ll have to call about something more serious than a mound of old tires or someone coming to steal the wrought iron fence piece by piece.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">“They need to tear it down,” Kisha said. “It just makes the neighborhood look horrible.”</p>
+    <p class="cue para" data-view="city" data-squares="on" data-tracts="off" data-screen="track" data-plate="wright">“They need to tear it down,” Kisha said. “It just makes the neighborhood look horrible.”</p>
 
-    <h2 class="cue section-head" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">Fulton isn’t unique</h2>
+    <h2 class="cue section-head" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">Fulton isn’t unique</h2>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">The district shuttered 18 school buildings this year. District officials were adamant the cause was fewer kids — a result of population and birthrate declines. They made the case that without closures CMSD can’t offer students the educational opportunities they deserve.</p>
+    <p class="cue para" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">The district shuttered 18 school buildings this year. District officials were adamant the cause was fewer kids — a result of population and birthrate declines. They made the case that without closures CMSD can’t offer students the educational opportunities they deserve.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">In response, community leaders warned that closing schools would only push more families from their neighborhoods. Current forecasts predict, a decade from now, the district will have lost an eighth of its current students.</p>
+    <p class="cue para" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="map">In response, community leaders warned that closing schools would only push more families from their neighborhoods. Current forecasts predict, a decade from now, the district will have lost an eighth of its current students.</p>
 
     <!-- The map hands over to Wheeler for the close; the first cue here is the
          turn, so it keeps a screen of scroll above it for the crossfade. -->
-    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Greg Wheeler, an alumnus of the now-closed Collinwood High School who grew up in the Glenville neighborhood, has spent a lot of time thinking about the chicken-and-egg nature of this problem. For more than a decade, he’s coached football at Collinwood High School, work he describes as being about “saving and transforming lives.”</p>
+    <p class="cue para" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Greg Wheeler, an alumnus of the now-closed Collinwood High School who grew up in the Glenville neighborhood, has spent a lot of time thinking about the chicken-and-egg nature of this problem. For more than a decade, he’s coached football at Collinwood High School, work he describes as being about “saving and transforming lives.”</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">At the same time, he’s watched as families have left the neighborhood for nearby suburbs. He believes that, in the past, a continuum of neighborhood schools helped keep families rooted from kindergarten through high school. Wheeler blames a mix of school closures and the district’s embrace of open enrollment and speciality schools through the Cleveland Plan for disrupting neighborhood schools and concentrating educational opportunities on the West Side of the city.</p>
+    <p class="cue para" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">At the same time, he’s watched as families have left the neighborhood for nearby suburbs. He believes that, in the past, a continuum of neighborhood schools helped keep families rooted from kindergarten through high school. Wheeler blames a mix of school closures and the district’s embrace of open enrollment and speciality schools through the Cleveland Plan for disrupting neighborhood schools and concentrating educational opportunities on the West Side of the city.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Now, “our neighborhoods suffer because our best and brightest often flee for a better life,” he reflected in a long email to me on the eve of Collinwood’s last day this spring. But he’s also realistic that this isn’t just about schools.</p>
+    <p class="cue para" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Now, “our neighborhoods suffer because our best and brightest often flee for a better life,” he reflected in a long email to me on the eve of Collinwood’s last day this spring. But he’s also realistic that this isn’t just about schools.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">“Everybody has to be held accountable, but our focus is just on school,” he said, reflecting on the lack of grocery stores, community spaces and other amenities beyond schools. “I think that there needs to be some equality across neighborhoods. There are certain neighborhoods that get more or seem like they get more than others.”</p>
+    <p class="cue para" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">“Everybody has to be held accountable, but our focus is just on school,” he said, reflecting on the lack of grocery stores, community spaces and other amenities beyond schools. “I think that there needs to be some equality across neighborhoods. There are certain neighborhoods that get more or seem like they get more than others.”</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Council Member Mike Polensek, who represents Collinwood and is a graduate of its historic high school, has loudly laid the blame at the feet of the district and the mayor who appoints its board.</p>
+    <p class="cue para" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler">Council Member Mike Polensek, who represents Collinwood and is a graduate of its historic high school, has loudly laid the blame at the feet of the district and the mayor who appoints its board.</p>
 
-    <p class="cue para" data-mask="city" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler" id="polensek">“The various neighborhoods who’ve had the highest population losses,” he said. “This is where they have decimated the public school system.… Unless we figure out how to stabilize the school system, we cannot stabilize the city.”</p>
+    <p class="cue para" data-view="city" data-squares="both" data-tracts="off" data-screen="track" data-plate="wheeler" id="polensek">“The various neighborhoods who’ve had the highest population losses,” he said. “This is where they have decimated the public school system.… Unless we figure out how to stabilize the school system, we cannot stabilize the city.”</p>
 
     <!-- The close. The stage leaves its column for the whole window and the map
          comes back on Collinwood High School, the copy riding over it on cards
          the way it rides over the clip. The first card's view is placed under
          the veil, since it has to be there before the veil lifts; the second
          pulls the camera back to the quadrant while that card is read. -->
-    <p class="cue card" data-mask="city" data-view="collinwood" data-squares="both" data-tracts="off" data-screen="fullmap" data-plate="map">Driving with Wheeler down St. Clair Avenue from where the high school sits at the five points intersection to where he grew up just off of East 152nd Street, the impact of school closures is clear. Every few blocks he could turn into a side street and find a residential pocket where a school once stood — or now stands empty.</p>
+    <p class="cue card" data-view="collinwood" data-squares="both" data-tracts="off" data-screen="fullmap" data-plate="map">Driving with Wheeler down St. Clair Avenue from where the high school sits at the five points intersection to where he grew up just off of East 152nd Street, the impact of school closures is clear. Every few blocks he could turn into a side street and find a residential pocket where a school once stood — or now stands empty.</p>
 
-    <p class="cue card" data-mask="city" data-view="northeast" data-squares="both" data-tracts="off" data-screen="fullmap" data-plate="map">In the Northeast quadrant of the city, home to both Collinwood and Glenville, we found records of nearly 20 schools that have closed since 2000.</p>
+    <p class="cue card" data-view="northeast" data-squares="both" data-tracts="off" data-screen="fullmap" data-plate="map">In the Northeast quadrant of the city, home to both Collinwood and Glenville, we found records of nearly 20 schools that have closed since 2000.</p>
 
     <!-- The last card, arriving with the choropleth: the tracts colour in and
          the camera pulls back to the whole city while it is read. This year's
          closures come off here too — the map is showing 2000-2010 now, so only
          the wave that falls inside it is left on. -->
-    <p class="cue card coda" data-mask="city" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2000s">Many of those schools were part of the crop of closures in 2010 and 2011. In the decade leading up to that year, population losses were especially pronounced in the census tracts where schools later shuttered. But after that slew of closures, the citywide trend and the trend in the census tracts where schools were shut diverged.</p>
+    <p class="cue card coda" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2000s">Many of those schools were part of the crop of closures in 2010 and 2011. In the decade leading up to that year, population losses were especially pronounced in the census tracts where schools later shuttered. But after that slew of closures, the citywide trend and the trend in the census tracts where schools were shut diverged.</p>
 
     <!-- The same map over the following decade. Only the fill changes: the
          camera and the squares stay where they are, so the two readings sit
          against each other. -->
-    <p class="cue card coda" data-mask="city" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2010s">Over the next decade, from 2010 to 2020, population declined in areas unaffected by school closings at an average of only around a half percentage point. In places where schools closed in 2010 or 2011, it declined, on average, by 17%.</p>
+    <p class="cue card coda" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2010s">Over the next decade, from 2010 to 2020, population declined in areas unaffected by school closings at an average of only around a half percentage point. In places where schools closed in 2010 or 2011, it declined, on average, by 17%.</p>
 
-    <p class="cue card" data-mask="city" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2010s">In other words, the data shows the closures could have entrenched accelerated population decline.</p>
+    <p class="cue card" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2010s">In other words, the data shows the closures could have entrenched accelerated population decline.</p>
 
     <!-- The squares turn from when the buildings closed to what became of them.
          Nothing else moves: the camera, the tracts and the copy column all hold,
          so the change is the only thing on the page that does. -->
-    <p class="cue card coda" data-mask="city" data-view="eastside" data-squares="status" data-screen="fullmap" data-plate="map" data-tracts="2010s">In both the present and past round of closures, the district and city have hoped to reuse closed schools to benefit the communities around them. In some cases they’ve had success: Henry Longfellow, a stately red brick elementary school, is now senior housing, and the beige-bricked Margaret Ireland hosts the headquarters for a local job training organization.</p>
+    <p class="cue card coda" data-view="eastside" data-squares="status" data-screen="fullmap" data-plate="map" data-tracts="2010s">In both the present and past round of closures, the district and city have hoped to reuse closed schools to benefit the communities around them. In some cases they’ve had success: Henry Longfellow, a stately red brick elementary school, is now senior housing, and the beige-bricked Margaret Ireland hosts the headquarters for a local job training organization.</p>
 
-    <p class="cue card card--last" data-mask="city" data-view="eastside" data-squares="status" data-screen="fullmap" data-plate="map" data-tracts="2010s">In 2011 and 2010, reuse — while costly and difficult — didn’t always stem population losses, our analysis found. Neither did demolition. Take South High School and East High School. Both schools have new, public uses, one as a police training center and the other as a district administrative building. But the census tracts containing the schools have lost about half their residents since the once-beloved high schools closed.</p>
+    <p class="cue card card--last" data-view="eastside" data-squares="status" data-screen="fullmap" data-plate="map" data-tracts="2010s">In 2011 and 2010, reuse — while costly and difficult — didn’t always stem population losses, our analysis found. Neither did demolition. Take South High School and East High School. Both schools have new, public uses, one as a police training center and the other as a district administrative building. But the census tracts containing the schools have lost about half their residents since the once-beloved high schools closed.</p>
 
     <!-- Out of the map and back onto the two tracks: Bickerstaff and her
          yearbook on the stage, the pages she is looking at set into the copy
          beside the lines they belong to. The boundary names this plate, so it
          is up when the veil lifts rather than a screen of scroll later. -->
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Reuse also didn’t always address the intangible losses people felt when these institutions closed. Schools, they told us, created a sense of togetherness and community pride. They were institutions to take pride in. That disappeared even when the building remained in use. At one home, a few blocks down from East High, a group of neighbors who’d grown up together became emotional as reminiscing led one of them to sing the school’s fight song.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Reuse also didn’t always address the intangible losses people felt when these institutions closed. Schools, they told us, created a sense of togetherness and community pride. They were institutions to take pride in. That disappeared even when the building remained in use. At one home, a few blocks down from East High, a group of neighbors who’d grown up together became emotional as reminiscing led one of them to sing the school’s fight song.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“Old East High, we love you, yes we do, to your standards we’ll be ever true; loyal gold and royal blue,” the first couple bars go.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“Old East High, we love you, yes we do, to your standards we’ll be ever true; loyal gold and royal blue,” the first couple bars go.</p>
 
     <figure class="rail-figure">
       <img src="https://signalcleveland.org/wp-content/uploads/2026/10/East-High-Yearbook1.jpg"
            alt="" width="1600" height="2500" loading="lazy" decoding="async">
     </figure>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Doreen Bickerstaff is one of those neighbors. She grew up down the street from East High and graduated from the school in 1978. She remembers it as a neighborhood institution people took pride in. She’s glad the building hasn’t fallen into disrepair, since her brother, an architect, helped design it, but she said the neighborhood isn’t the same without the school.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Doreen Bickerstaff is one of those neighbors. She grew up down the street from East High and graduated from the school in 1978. She remembers it as a neighborhood institution people took pride in. She’s glad the building hasn’t fallen into disrepair, since her brother, an architect, helped design it, but she said the neighborhood isn’t the same without the school.</p>
 
     <figure class="rail-figure">
       <img src="https://signalcleveland.org/wp-content/uploads/2026/10/East-High-Yearbook4.jpg"
            alt="" width="1600" height="2500" loading="lazy" decoding="async">
     </figure>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“As kids, we felt safe, loved and that sense of community,” she said. “The school was the anchor.”</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“As kids, we felt safe, loved and that sense of community,” she said. “The school was the anchor.”</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Daniel Gray-Kontar, a Cleveland-born artist with experience in community-led development in the city, says what Bickerstaff describes gets lost in Cleveland’s use of “the vocabulary of asset management.” When they plan for the future of these buildings, city officials discuss acreage and square footage, but, often, disregard what he describes as the sacredness of these spaces.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">Daniel Gray-Kontar, a Cleveland-born artist with experience in community-led development in the city, says what Bickerstaff describes gets lost in Cleveland’s use of “the vocabulary of asset management.” When they plan for the future of these buildings, city officials discuss acreage and square footage, but, often, disregard what he describes as the sacredness of these spaces.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“Schools hold so much memory, of the people who have gathered in those buildings and who have made collective meaning together,” he said. “For a generation, or for several generations.”</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="east" data-tracts="off">“Schools hold so much memory, of the people who have gathered in those buildings and who have made collective meaning together,” he said. “For a generation, or for several generations.”</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">When Mary Keith walks past where Giddings Elementary once stood — on East 71st Street in the Fairfax neighborhood — it’s the memories of the good times that bring tears to her eyes.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">When Mary Keith walks past where Giddings Elementary once stood — on East 71st Street in the Fairfax neighborhood — it’s the memories of the good times that bring tears to her eyes.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Her grandkids attended the school, and she volunteered there for nearly two decades, helping to organize carol concerts at Christmas time and school supply drives come August. But, most fondly, she remembers the “Girlfriends Club.”</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Her grandkids attended the school, and she volunteered there for nearly two decades, helping to organize carol concerts at Christmas time and school supply drives come August. But, most fondly, she remembers the “Girlfriends Club.”</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">It had, she said, only four rules: respect yourself, respect your girlfriends, respect all adults and no fighting. If the girlfriends could manage that, then twice a year, they would get dressed up, some with gloves and long dresses, others in poofy skirts and bobby socks and go for tea at the Ritz-Carlton downtown. The first year they took a school bus. The next year, Keith, with help from a nearby funeral home, organized a limo.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">It had, she said, only four rules: respect yourself, respect your girlfriends, respect all adults and no fighting. If the girlfriends could manage that, then twice a year, they would get dressed up, some with gloves and long dresses, others in poofy skirts and bobby socks and go for tea at the Ritz-Carlton downtown. The first year they took a school bus. The next year, Keith, with help from a nearby funeral home, organized a limo.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">When the school was closed, the club’s founder and teacher was laid off. And while its students have mostly found their way as they’ve grown up, Keith said, the program no longer exists.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">When the school was closed, the club’s founder and teacher was laid off. And while its students have mostly found their way as they’ve grown up, Keith said, the program no longer exists.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">“It was sad, you know, how they did it,” she said, recalling how she scooped up school-picture-day photos from a dumpster the day the school closed in 2011. “It was just heartbreaking.”</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">“It was sad, you know, how they did it,” she said, recalling how she scooped up school-picture-day photos from a dumpster the day the school closed in 2011. “It was just heartbreaking.”</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Schools also had a practical function in a lot of neighborhoods as meet-up spots and polling places. When these buildings shuttered, neighbors said they noticed that the city paid less attention to their sidewalks and streets. They pointed to city-owned grass that wasn’t cut, snow that wasn’t cleared as quickly as before, and potholes that weren’t filled. Instead, neighbors took on these public burdens, calling 311 and watching out for break-ins.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Schools also had a practical function in a lot of neighborhoods as meet-up spots and polling places. When these buildings shuttered, neighbors said they noticed that the city paid less attention to their sidewalks and streets. They pointed to city-owned grass that wasn’t cut, snow that wasn’t cleared as quickly as before, and potholes that weren’t filled. Instead, neighbors took on these public burdens, calling 311 and watching out for break-ins.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off" data-warm="martin">For nearly Carol White’s whole life, Gracemount Elementary had been right across the street. After serving the neighborhood for over half a century, it closed in 2011. It was demolished two years later.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">For nearly Carol White’s whole life, Gracemount Elementary had been right across the street. After serving the neighborhood for over half a century, it closed in 2011. It was demolished two years later.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">White remembers as a kid her grandmother would walk her down the block to the school. She also remembers the school as “the place to play basketball, the parking lot was full,” she said.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">White remembers as a kid her grandmother would walk her down the block to the school. She also remembers the school as “the place to play basketball, the parking lot was full,” she said.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Later, after she graduated from John F. Kennedy High School, she and her neighbors fundraised together for a new playground at Gracemount. That playground, along with the school building, was demolished after the school closed.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Later, after she graduated from John F. Kennedy High School, she and her neighbors fundraised together for a new playground at Gracemount. That playground, along with the school building, was demolished after the school closed.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Now, in the place of the neighborhood anchor is an empty grass lot, which White says she is constantly bugging the city to mow.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="keith" data-tracts="off">Now, in the place of the neighborhood anchor is an empty grass lot, which White says she is constantly bugging the city to mow.</p>
 
-    <h2 class="cue section-head" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Clarice Washington has lived in Cleveland for nearly 40 years and next to an abandoned school for over a decade.</h2>
+    <h2 class="cue section-head" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Clarice Washington has lived in Cleveland for nearly 40 years and next to an abandoned school for over a decade.</h2>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Still, with roots in rural Alabama, she considers herself a country girl. She grows summer squash, zucchini, string beans and tomatoes in the garden plot on the side of her home. Her front garden, though, is dedicated to flowers.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Still, with roots in rural Alabama, she considers herself a country girl. She grows summer squash, zucchini, string beans and tomatoes in the garden plot on the side of her home. Her front garden, though, is dedicated to flowers.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">“People tell me I am the only person that has flowers on the street,” she said, gesturing over the banister of her porch. “I love them.”</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">“People tell me I am the only person that has flowers on the street,” she said, gesturing over the banister of her porch. “I love them.”</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Across the street, past the white yucca blossoms in her garden, stands the abandoned hull of Mt. Auburn Elementary school, or, as she calls it, “my eyesore.” Just up the block stands its equally imposing older brother, Audubon Middle School, also vacant.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">Across the street, past the white yucca blossoms in her garden, stands the abandoned hull of Mt. Auburn Elementary school, or, as she calls it, “my eyesore.” Just up the block stands its equally imposing older brother, Audubon Middle School, also vacant.</p>
 
-    <figure class="rail-figure">
-      <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-6-scaled.jpg"
-           alt="" width="2560" height="1703" loading="lazy" decoding="async">
-    </figure>
-
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">For a while, Washington held out hope the schools might reopen with some other use. A developer was picked in 2021 to turn both schools into senior housing, but the plan fell through after state lawmakers changed the tax credits that funded it. Deborah Gray, the council member for the area, told Signal Cleveland there’s a new buyer interested in Audubon, but that agreement isn’t close to final either.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">For a while, Washington held out hope the schools might reopen with some other use. A developer was picked in 2021 to turn both schools into senior housing, but the plan fell through after state lawmakers changed the tax credits that funded it. Deborah Gray, the council member for the area, told Signal Cleveland there’s a new buyer interested in Audubon, but that agreement isn’t close to final either.</p>
 
     <figure class="rail-figure">
       <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-3-scaled.jpg"
            alt="" width="2560" height="1703" loading="lazy" decoding="async">
+      <figcaption>Washington shows a mailer sent to her a few years ago detailing plans to redevelop the vacant school building. The plan fell through when the developers failed to secure enough funding.</figcaption>
     </figure>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">After years of not seeing construction, Washington has settled back into a place of discontented acceptance.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">After years of not seeing construction, Washington has settled back into a place of discontented acceptance.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Her neighbor, Tiffany Martin, shares her frustration. Martin lives across the street from Washington. The two women don’t really know each other, but Martin is also bothered by the empty schools.</p>
+    <!-- The closing sheet, read the same way as the opening one: a beat to a
+         cue, the gap above each is how long the beat before it lasts, and the
+         stage is handed to Martin's portrait under it so the last chapter's
+         two tracks are there the moment it lifts. -->
+    <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="none" aria-hidden="true"></div>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Martin and her six kids moved back to Cleveland from Georgia two years ago to help her mom, who was retiring and selling the family home. She’s been shocked by how much things have changed since the schools closed.</p>
+    <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="close-left" aria-hidden="true"></div>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“The grass was sky high in the fields, where you know the city is supposed to be responsible for cutting it,” she said. “I’m looking like: ‘What is going on?’”</p>
+    <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="close-pair" aria-hidden="true"></div>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Most evenings this summer the family walked past both empty schools, to drop her youngest off at football practice. Even in a group, Martin worries about them.</p>
+    <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="none" aria-hidden="true"></div>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">As a kid, she remembers walking to school and summer afternoons spent at the pool at a nearby recreation center. This year the pool wasn’t open. And, on the first day of school, her kids got on buses to take them to different schools more than a mile away. Her own elementary school, a 15-minute walk away, was demolished years ago to make way for affordable housing. Martin says all these things add up to the neighborhood’s failure to do one thing: “thrive.”</p>
+    <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="close-solo" aria-hidden="true"></div>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“Losing the school in the area, people started to move away from the community, you know?” she said. “Things start to fall apart, and that’s a part of an abandonment.”</p>
+    <div class="cue hold hold--last" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="none" aria-hidden="true"></div>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">From her front porch, Washington has watched that happen, slowly.</p>
+    <p class="cue para turn--over" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Her neighbor, Tiffany Martin, shares her frustration. Martin lives across the street from Washington. The two women don’t really know each other, but Martin is also bothered by the empty schools.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“Well, I have an island here, as you see,” she said, describing how the neighborhood has changed since 1989, when the school was still open. “There were houses there, and people, homeowners.”</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Martin and her six kids moved back to Cleveland from Georgia two years ago to help her mom, who was retiring and selling the family home. She’s been shocked by how much things have changed since the schools closed.</p>
 
-    <p class="cue para" data-mask="city" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">And, problematic for Washington’s garden, the school isn’t just an eyesore — it’s also a refuge for the neighborhood groundhogs. Sitting on her porch in the evenings, she’ll watch them chase each other around the school’s yard where, once, many years ago, kids used to romp around instead.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“The grass was sky high in the fields, where you know the city is supposed to be responsible for cutting it,” she said. “I’m looking like: ‘What is going on?’”</p>
 
-    <figure class="rail-figure">
-      <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-11-scaled.jpg"
-           alt="" width="2560" height="1703" loading="lazy" decoding="async">
-    </figure>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">Most evenings this summer the family walked past both empty schools, to drop her youngest off at football practice. Even in a group, Martin worries about them.</p>
+
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">As a kid, she remembers walking to school and summer afternoons spent at the pool at a nearby recreation center. This year the pool wasn’t open. And, on the first day of school, her kids got on buses to take them to different schools more than a mile away. Her own elementary school, a 15-minute walk away, was demolished years ago to make way for affordable housing. Martin says all these things add up to the neighborhood’s failure to do one thing: “thrive.”</p>
+
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“Losing the school in the area, people started to move away from the community, you know?” she said. “Things start to fall apart, and that’s a part of an abandonment.”</p>
+
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">From her front porch, Washington has watched that happen, slowly.</p>
+
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">“Well, I have an island here, as you see,” she said, describing how the neighborhood has changed since 1989, when the school was still open. “There were houses there, and people, homeowners.”</p>
+
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="martin" data-tracts="off">And, problematic for Washington’s garden, the school isn’t just an eyesore — it’s also a refuge for the neighborhood groundhogs. Sitting on her porch in the evenings, she’ll watch them chase each other around the school’s yard where, once, many years ago, kids used to romp around instead.</p>
 
   </div>
 </div>
@@ -622,12 +755,57 @@
   </video>
 </div>
 
+<!-- The sheet the piece opens on, outside .piece because it covers both tracks.
+     The copy that crosses it first scrolls over it in the rail; the three
+     photographs are its own, and a cue in the rail says which of them is up. -->
+<div class="screen screen--shots" id="screen-open">
+  <figure class="shot shot--left" id="shot-left">
+    <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7782-scaled.jpg"
+         alt="" width="1703" height="2560" loading="eager" decoding="async">
+    <figcaption>Clarice Washington has lived across from Mt. Auburn Elementary School for more than 30 years.</figcaption>
+  </figure>
+
+  <figure class="shot shot--right" id="shot-right">
+    <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3112-scaled.jpg"
+         alt="" width="2048" height="2560" loading="eager" decoding="async">
+    <figcaption><span class="tk">Placeholder caption</span></figcaption>
+  </figure>
+
+  <figure class="shot shot--solo" id="shot-solo">
+    <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_7004-scaled.jpg"
+         alt="" width="2560" height="1703" loading="eager" decoding="async">
+    <figcaption>The Robert Fulton Elementary School building.</figcaption>
+  </figure>
+</div>
+
+<!-- The sheet the piece closes on, the same device as the opening one: the
+     neighbourhood Washington and Martin share, before the last chapter hands
+     the two tracks back. -->
+<div class="screen screen--shots" id="screen-close">
+  <figure class="shot shot--left" id="shot-close-left">
+    <img src="https://signalcleveland.org/wp-content/uploads/2026/07/Cleveland-School-Closings-6-scaled.jpg"
+         alt="" width="2560" height="1703" loading="lazy" decoding="async">
+    <figcaption>The Mt. Auburn Elementary School building seen from Clarice Washington’s front porch.</figcaption>
+  </figure>
+
+  <figure class="shot shot--right" id="shot-close-right">
+    <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_3182-scaled.jpg"
+         alt="" width="2560" height="1703" loading="lazy" decoding="async">
+    <figcaption><span class="tk">Placeholder caption</span></figcaption>
+  </figure>
+
+  <figure class="shot shot--solo" id="shot-close-solo">
+    <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_0188-scaled.jpg"
+         alt="" width="2048" height="2560" loading="lazy" decoding="async">
+    <figcaption>Tiffany Martin’s children run down the sidewalk on their way to football practice at Luke Easter Park. Their walk to the park leads them past two vacant school buildings.</figcaption>
+  </figure>
+</div>
+
 <div class="veil" id="veil" aria-hidden="true"></div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/scrollama@3.2.0/build/scrollama.min.js"></script>
 <script>
-  const FULTON = [-81.583995, 41.470049];   // centre of the school building
   // Collinwood High School, which the closing chapter opens on, close enough to
   // put the square that marks its closure on the building itself.
   const COLLINWOOD = [-81.574155, 41.553481];
@@ -648,7 +826,6 @@
   // but it is the half the story happens on, so none of the frame is spent on
   // the other one.
   const EAST_BOUNDS = [[-81.70, 41.425], [-81.53, 41.595]];
-  const HOLE_RADIUS_M = 130;        // circle radius in metres — widen to show more of the block
   const NAVY = '#1a1b2e';
   const LOSS = ['#23685b', '#51a89a', '#a9d2cf', '#daeae5'];   // --loss-* above
   const TRACT_FILL = 0.75;          // sheer enough to keep the city under it
@@ -1485,8 +1662,12 @@
       },
       layers: [{ id: 'sat', type: 'raster', source: 'sat' }]
     },
-    center: FULTON,
-    zoom: 17,
+    // The city, which is where the piece opens and what it keeps coming back
+    // to. fitBounds in the constructor rather than a centre and a zoom, so the
+    // frame is the same one every later 'city' move fits; it drops the padding
+    // again once it has worked the camera out, so nothing is stored on it.
+    bounds: CITY_BOUNDS,
+    fitBoundsOptions: { padding: 48 },
     maxZoom: 19,
     pitch: 0,
     bearing: 0,
@@ -1494,27 +1675,13 @@
     interactive: false   // the page scrolls; the map does not
   });
 
-  // Ring of lng/lat points approximating a circle of `metres` around [lng, lat].
-  function circleRing([lng, lat], metres, points = 128) {
-    const dLat = metres / 111320;
-    const dLng = metres / (111320 * Math.cos(lat * Math.PI / 180));
-    const ring = [];
-    for (let i = 0; i <= points; i++) {
-      const t = (i / points) * 2 * Math.PI;
-      ring.push([lng + dLng * Math.cos(t), lat + dLat * Math.sin(t)]);
-    }
-    return ring;
-  }
-
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MASK_FADE_MS = reduceMotion ? 0 : 1400;
   let layersReady = false;
 
   // These mirror the map's opening state, so entering the first card is a no-op
-  // rather than a redundant flight to where the camera already is. Declared here
-  // because the load handler below reads curMask.
-  let curMask = 'circle';
-  let curView = 'close';
+  // rather than a redundant flight to where the camera already is.
+  let curView = 'city';
   let curSquares = 'off';
   let curTracts = 'off';   // off | 2000s | 2010s
   let curPlate = 'opener';   // matches the markup, which ships the opener visible
@@ -1529,20 +1696,7 @@
     map.addLayer({ id: 'mask-city', type: 'fill', source: 'mask-city',
                    paint: { 'fill-color': NAVY } });
 
-    // Second navy layer on top, holed over the school only. Fading this one out is
-    // what opens the story from the single building to the whole city. Its hole
-    // winds clockwise, opposite WORLD, so it reads as a hole and not a second shape.
-    map.addSource('mask-circle', { type: 'geojson', data: {
-      type: 'Feature',
-      geometry: { type: 'Polygon', coordinates: [
-        WORLD, circleRing(FULTON, HOLE_RADIUS_M).reverse()
-      ]}
-    }});
-    map.addLayer({ id: 'mask-circle', type: 'fill', source: 'mask-circle',
-                   paint: { 'fill-color': NAVY, 'fill-opacity': 1,
-                            'fill-opacity-transition': { duration: MASK_FADE_MS } } });
-
-    // The tracts, under both masks so the navy always wins over them. The fill
+    // The tracts, under the mask so the navy always wins over them. The fill
     // is all there is to them: it carries the population change.
     map.addSource('tracts', { type: 'geojson', data: {
       type: 'FeatureCollection',
@@ -1563,7 +1717,6 @@
 
     // A card may have fired before the style finished loading, so settle up now.
     layersReady = true;
-    map.setPaintProperty('mask-circle', 'fill-opacity', curMask === 'circle' ? 1 : 0);
     paintTracts(curTracts);
   });
 
@@ -1649,20 +1802,68 @@
     // The legend belongs to the map, so it hides whenever a plate covers it.
     document.body.classList.toggle('on-map', name === 'map');
 
-    // A plate that carries a clip plays only while it is the one on the stage.
-    // A looping clip is exactly what reduced motion asks us not to start.
-    for (const key in PLATES) {
-      const clip = PLATES[key].querySelector('video');
-      if (!clip) continue;
-      if (key === name && !reduceMotion) clip.play().catch(() => {});   // autoplay can be refused
-      else clip.pause();
-    }
   }
 
-  // The montage chapter, which is the clip covering the screen; 'track' is the
-  // absence of it, and so the two-track layout underneath.
+  // The sheets that cover both tracks: the one the piece opens on, the one it
+  // closes on, and the montage chapter's clip. 'track' is the absence of all of
+  // them, and so the two-track layout underneath; 'fullmap' is the stage itself
+  // taking the window, which is a change of geometry and goes under the veil
+  // instead.
   const montage = document.getElementById('montage');
   const montageVideo = montage.querySelector('video');
+  const SCREENS = {
+    open:    document.getElementById('screen-open'),
+    close:   document.getElementById('screen-close'),
+    montage: montage
+  };
+
+  // Which of the sheets' photographs are up. A beat at a time, declared by the
+  // cues like everything else, so scrolling back up takes them off again in the
+  // order they arrived. The two sheets are never up together, so one list of
+  // beats covers both: a beat names the figures it puts up, and every other
+  // figure goes down.
+  const SHOTS = {};
+  document.querySelectorAll('.shot').forEach(el => { SHOTS[el.id] = el; });
+  const SHOT_BEATS = {
+    none: [],
+    left: ['shot-left'], pair: ['shot-left', 'shot-right'], solo: ['shot-solo'],
+    'close-left': ['shot-close-left'],
+    'close-pair': ['shot-close-left', 'shot-close-right'],
+    'close-solo': ['shot-close-solo']
+  };
+  let curShot = 'none';
+
+  function applyShot(name) {
+    if (name === curShot) return;
+    curShot = name;
+    const up = SHOT_BEATS[name] || [];
+    for (const key in SHOTS) SHOTS[key].classList.toggle('is-visible', up.includes(key));
+  }
+
+  // Must outlast the .screen opacity transition, for the reason applyPlate
+  // gives: two sheets crossfading side by side are both half-clear at the
+  // middle of it, and the stage shows through between the two screens. So the
+  // arriving sheet is raised over the one it replaces and fades in against it
+  // while that is still opaque, and that one is not dropped until it has.
+  const SCREEN_FADE_MS = reduceMotion ? 0 : 1120;
+  let screenCleanup;
+
+  function showScreen(name) {
+    clearTimeout(screenCleanup);
+    const incoming = SCREENS[name];
+    if (!incoming) {                    // 'track' and 'fullmap': no sheet at all
+      for (const key in SCREENS) SCREENS[key].classList.remove('is-visible');
+      return;
+    }
+    for (const key in SCREENS) SCREENS[key].style.zIndex = (key === name) ? 4 : 3;
+    incoming.classList.add('is-visible');
+    screenCleanup = setTimeout(() => {
+      for (const key in SCREENS) {
+        if (key !== curScreen) SCREENS[key].classList.remove('is-visible');
+      }
+    }, SCREEN_FADE_MS);
+  }
+
   let curScreen = 'track';
 
   // The stage trading its column for the whole window, and the camera going
@@ -1698,7 +1899,7 @@
     const prev = curScreen;
     curScreen = name;
     if (name === 'fullmap' || prev === 'fullmap') turnScreen(name === 'fullmap', plate);
-    montage.classList.toggle('is-visible', name === 'montage');
+    showScreen(name);
     // A looping clip is exactly what reduced motion asks us not to start; the
     // poster carries the chapter in that case.
     if (reduceMotion) return;
@@ -1706,14 +1907,13 @@
     else montageVideo.pause();
   }
 
-  // A clip is on screen the moment its chapter arrives, so the fetch starts a
-  // few screens earlier instead of at the crossfade. They are 33 MB and 27 MB,
-  // though, so a reader who is paying for the bytes waits for the crossfade
-  // instead and reads the first lines over the first frame.
+  // The clip is on screen the moment its chapter arrives, so the fetch starts a
+  // few screens earlier instead of at the crossfade. It is 33 MB, though, so a
+  // reader who is paying for the bytes waits for the crossfade instead and
+  // reads the first lines over the first frame.
   function warmClip(name) {
     if (reduceMotion) return;
-    const clip = name === 'montage' ? montageVideo
-                                    : PLATES[name] && PLATES[name].querySelector('video');
+    const clip = name === 'montage' ? montageVideo : null;
     if (!clip || clip.preload === 'auto') return;
     const net = navigator.connection;
     if (net && (net.saveData || /2g/.test(net.effectiveType || ''))) return;
@@ -1755,20 +1955,21 @@
     if (layersReady) paintTracts(name);
   }
 
-  function applyMask(name) {
-    if (name === curMask) return;
-    curMask = name;
-    if (layersReady) {
-      map.setPaintProperty('mask-circle', 'fill-opacity', name === 'circle' ? 1 : 0);
-    }
-  }
-
   // In the two-track layout the map has the stage to itself and only wants
   // breathing room inside it. In the closing chapter the copy rides over the
   // map instead, in the rail's column on the right, so the camera is given a
   // margin on that side to sit the city clear of the cards. Phones take the
   // copy across the full width, where no horizontal margin would help, so they
   // keep the even box.
+  // The width the document has, which the opening chapter's full-window copy
+  // is laid out against: 100vw counts the scrollbar, and copy that wide would
+  // push a horizontal one out at the other side.
+  function measureWindow() {
+    document.documentElement.style.setProperty(
+      '--win', document.documentElement.clientWidth + 'px');
+  }
+  measureWindow();
+
   const COPY_MARGIN = 0.26;        // of the window
   function mapPadding() {
     const pad = window.innerWidth <= 900 ? 24 : 48;
@@ -1791,14 +1992,13 @@
     // own margin twice over, small and off to one side, two chapters earlier.
     // The same shift as an offset is applied for that one move and left behind.
     const offset = [(padding.left - padding.right) / 2, 0];
-    if (name === 'city')       return map.fitBounds(CITY_BOUNDS, { padding, duration, essential: true });
     if (name === 'northeast')  return map.fitBounds(NE_BOUNDS, { padding, duration, essential: true });
     if (name === 'eastside')   return map.fitBounds(EAST_BOUNDS, { padding, duration, essential: true });
     if (name === 'collinwood') return map.flyTo({ center: COLLINWOOD, zoom: COLLINWOOD_ZOOM,
                                                   offset, duration, essential: true });
-    // No margin on the opener: the circle is cut around Fulton, so the camera
-    // has to sit on it squarely.
-    map.flyTo({ center: FULTON, zoom: 17, duration, essential: true });
+    // 'city': the whole of Cleveland, which is where the map starts and what
+    // every chapter that does not name a view of its own comes back to.
+    map.fitBounds(CITY_BOUNDS, { padding, duration, essential: true });
   }
 
   function applyView(name) {
@@ -1822,11 +2022,11 @@
     .setup({ step: '.cue', offset: 0.6 })
     .onStepEnter(({ element }) => {
       const d = element.dataset;
-      if (d.mask) applyMask(d.mask);
       if (d.view) applyView(d.view);
       if (d.squares) applySquares(d.squares);
       if (d.tracts) applyTracts(d.tracts);
       if (d.plate) applyPlate(d.plate);
+      if (d.shot) applyShot(d.shot);
       if (d.warm) warmClip(d.warm);
     });
 
@@ -1873,18 +2073,21 @@
     }, { threshold: 0 }).observe(b.last);
   });
 
-  // Hand the stage to the map once the headline has scrolled away. This is its
-  // own observer rather than a scrollama cue: the masthead's box ends around
-  // 370px while the cue line sits at 60% of the viewport, so it never becomes
-  // the active step and so never fires an enter or an exit to hang this on.
-  // The -25% top margin pulls the trigger up to a quarter of the way down the
-  // screen, which puts the crossfade well clear of the first paragraph's photos.
+  // Put the opening photograph back on the stage when the headline is on the
+  // page. This is its own observer rather than a scrollama cue: the masthead's
+  // box ends around 370px while the cue line sits at 60% of the viewport, so it
+  // never becomes the active step and so never fires an enter to hang this on.
+  // Only that way round — the stage is handed back to the map by the last of
+  // the opening sheet's beats, several screens further down, so the photograph
+  // is crossfaded away under a sheet that has long been up rather than in front
+  // of a reader who has flicked past the headline faster than it could arrive.
   new IntersectionObserver(
-    ([entry]) => applyPlate(entry.isIntersecting ? 'opener' : 'map'),
+    ([entry]) => { if (entry.isIntersecting) applyPlate('opener'); },
     { threshold: 0, rootMargin: '-25% 0px 0px 0px' }
   ).observe(masthead);
 
   window.addEventListener('resize', () => {
+    measureWindow();
     map.resize();
     // Every view is fitted or centred against a stage that has just changed
     // shape, so put the camera back where the current one wants it.
