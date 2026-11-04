@@ -102,7 +102,7 @@
      zoom. MapLibre writes `transform` on the marker element itself, so the square
      is a child: animating the marker's own transform would fight its positioning.
      --i staggers them in one after another. */
-  .closure     { width: 11px; height: 11px; pointer-events: none; }
+  .closure     { width: 9px; height: 9px; pointer-events: none; }
   .closure-box { display: block; width: 100%; height: 100%;
                  opacity: 0; transform: scale(.4);
                  transition: opacity .45s ease, transform .45s ease,
@@ -115,10 +115,20 @@
   /* Legend. Tied to the map being the visible plate as well as to the squares,
      so it cannot strand itself on top of a photograph: the narrative sections
      leave the squares switched on underneath their plates. */
-  .legend { position: absolute; left: 2vh; bottom: 2vh; z-index: 7;
+  .legend { position: absolute; left: 2vh; top: 2vh; z-index: 7;
             opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+  /* Except in the full-window chapter, where the top left belongs to the
+     choropleth's own title and key: there the squares are listed underneath,
+     at the foot of the same side. */
+  body.on-fullmap .legend { top: auto; bottom: 2vh; }
   body.on-map.closures-on .legend,
   body.on-fullmap.closures-on .legend { opacity: 1; }
+  /* The key to the squares is set like a label on the map rather than like
+     body copy: the condensed face the headings use, a size up from the key
+     under the choropleth's title, which keeps its own smaller setting. */
+  .legend .legend-row { font-family: var(--font-heading); font-weight: 700;
+                        font-size: 18px; gap: .6rem; margin-bottom: .6rem; }
+  .legend .legend-swatch { width: 15px; height: 15px; }
   .legend-row { display: flex; align-items: center; gap: .55rem; margin: 0 0 .5rem;
                 font-size: 14px; line-height: 1.2; color: #fff;
                 text-shadow: 0 1px 3px rgba(0,0,0,.6); }
@@ -377,10 +387,38 @@
 
   /* ---- one column: visual pinned to the top, copy running under it ---- */
   @media (max-width: 900px) {
-    .piece { grid-template-columns: 1fr; }
-    .stage-col { height: 58vh; }
+    /* One column — and laid out as blocks rather than as a one-column grid.
+       A sticky grid item is held inside its own grid area, which here is its
+       own height, so as a grid the stage would scroll away after the first
+       screen instead of pinning. As a block its containing block is the whole
+       piece, so it can hold the top of the window for all of it. */
+    .piece { display: block; }
+    /* It does not hold it yet, though. The opening photograph is the top of
+       the page rather than a track of its own: it stands still under the
+       headline, and the two of them go up the window together on the first
+       scroll, which is what uncovers the copy underneath. Over the copy when
+       it is pinned, so the copy passes behind it rather than across it — the
+       rail's own raised levels, the cards and the full-window paragraphs,
+       are 5. */
+    .stage-col { position: relative; height: 52vh; z-index: 6; }
+    /* It takes the top of the window from the headline onwards. The switch is
+       made while the white sheet covers the window, so the jump it would
+       otherwise make — from scrolled away to pinned — happens behind it. */
+    body.past-masthead .stage-col { position: sticky; top: 0; }
+    /* Except where something is meant to be over the stage: a white sheet,
+       which covers the window whole, and the full-window map, which the cards
+       are read on top of. */
+    body.on-sheet .stage-col,
+    body.on-fullmap .stage-col { z-index: 2; }
     .rail { padding: 0 7vw; }
-    .masthead { padding-top: 7vh; margin-bottom: 48vh; }
+    /* Tight under the photograph's caption: the two read as one opening. */
+    .masthead { padding-top: 2.4vh; margin-bottom: 12vh; }
+    /* And the copy follows that opening straight up the window rather than
+       waiting out a screen of white behind it. It can: it is already on white,
+       the sheet coming up behind it is the same white, and it reads over that
+       sheet rather than under it. A chapter turn's usual screen and a half of
+       blank rail is for a chapter that changes what is on the screen. */
+    .cue.lead { margin-top: 24vh; }
     .para { max-width: none; }
     .card { max-width: none; }
     /* One column, so the rail already starts at the left edge: only its own
@@ -389,15 +427,36 @@
     /* Two pictures side by side on a phone are narrow, so each takes nearly
        all of its half — the width is what limits them here, not the height —
        and the caption sets smaller under it. */
-    /* The stage is only 58vh here and the caption, set to the width of a
-       picture that is itself narrow, runs to three or four lines, so the
-       picture gives up more of the stage than it does on a wide screen. */
+    /* The stage is half the window here, so the picture gives up more of it
+       than it does on a wide screen. The caption takes the stage's width
+       rather than the picture's: at this size the picture's own measure is
+       narrow enough to run a caption to five lines, which the stage has no
+       room for. */
+    .plate--cap { grid-template-columns: minmax(0, 1fr); justify-items: center; }
     .plate--cap img { max-height: 36vh; max-width: 86vw; }
     .plate--cap--small img { max-height: 32vh; }
-    .plate--cap figcaption { font-size: 13px; }
-    .shot img { max-height: 40vh; max-width: 44vw; }
-    .shot--solo img { max-width: 86vw; }
-    .shot figcaption { font-size: 13px; }
+    .plate--cap figcaption { width: auto; min-width: 0; justify-self: stretch;
+                             font-size: 13px; }
+    /* A photograph on the pinned band is a panel over the copy rather than a
+       page of its own, so it sits on the stage's navy and its caption is set
+       in a white box under it. The opening photograph is not one of these: it
+       is the top of the page, with the headline under it on the same white. */
+    .plate--cap:not(.plate--hero) { background: var(--navy); }
+    .plate--cap:not(.plate--hero) figcaption { background: #fff;
+                                               padding: .5rem .7rem;
+                                               margin-top: .7rem; }
+    /* Side by side on a phone leaves two postage stamps, so a pair stacks: a
+       row each, the picture centred on the full width rather than held to a
+       half of it, and the caption set to that width instead of the picture's
+       own — which at this size would be a very narrow measure. The one that
+       comes alone is out of the row, so none of this reaches it. */
+    .screen--shots { grid-template-columns: minmax(0, 1fr);
+                     justify-items: stretch; row-gap: 3vh; padding-inline: 7vw; }
+    .shot--left  { grid-row: 1; grid-column: 1; }
+    .shot--right { grid-row: 2; grid-column: 1; }
+    .shot img { max-height: 32vh; max-width: 86vw; margin-inline: auto; }
+    .shot--solo img { max-height: 40vh; max-width: 86vw; }
+    .shot figcaption { width: auto; min-width: 0; font-size: 13px; }
     .entry-title { font-size: clamp(30px, 8vw, 42px); }
 
   }
@@ -421,7 +480,7 @@
       <div id="map"></div>
 
       <!-- Visible from the start, so the map is never glimpsed before JS runs. -->
-      <figure class="plate plate--cap is-visible" id="plate-opener">
+      <figure class="plate plate--cap plate--hero is-visible" id="plate-opener">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/09/MSI_8443-scaled.jpg"
              alt="" width="2048" height="2560" loading="eager" decoding="async">
         <figcaption>The South High School building is now owned by the City of Cleveland and used to train public safety workers.</figcaption>
@@ -516,7 +575,7 @@
          which is where it swaps the opening photograph for the map — covered,
          rather than crossfading in front of the reader as the headline
          leaves — and where the squares wait until the sheet has lifted. -->
-    <p class="cue para plain" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="none">The abandoned Robert Fulton Elementary is the tallest building for blocks. Stand anywhere in the neighborhood and its chimney looms on the horizon.</p>
+    <p class="cue para plain lead" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="none">The abandoned Robert Fulton Elementary is the tallest building for blocks. Stand anywhere in the neighborhood and its chimney looms on the horizon.</p>
 
     <p class="cue para plain" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="none">Neighbors say, when it was open, Fulton was a good school. Today, the staircase inside the building has mostly collapsed. Its windows, where not covered in greying plywood, are broken. A tree grows in one of its gutters.</p>
 
@@ -1834,16 +1893,22 @@
   function showScreen(name) {
     clearTimeout(screenCleanup);
     const incoming = SCREENS[name];
-    if (!incoming) {                    // 'track' and 'fullmap': no sheet at all
+    if (incoming) {
+      // On a phone the stage is pinned over the copy, so it has to stand down
+      // for a sheet — from the moment one starts arriving.
+      document.body.classList.add('on-sheet');
+      for (const key in SCREENS) SCREENS[key].style.zIndex = (key === name) ? 4 : 3;
+      incoming.classList.add('is-visible');
+    } else {                            // 'track' and 'fullmap': no sheet at all
       for (const key in SCREENS) SCREENS[key].classList.remove('is-visible');
-      return;
     }
-    for (const key in SCREENS) SCREENS[key].style.zIndex = (key === name) ? 4 : 3;
-    incoming.classList.add('is-visible');
     screenCleanup = setTimeout(() => {
       for (const key in SCREENS) {
         if (key !== curScreen) SCREENS[key].classList.remove('is-visible');
       }
+      // And takes its place back only once the sheet has finished leaving,
+      // rather than cutting in front of one still fading.
+      document.body.classList.toggle('on-sheet', !!SCREENS[curScreen]);
     }, SCREEN_FADE_MS);
   }
 
@@ -2030,9 +2095,25 @@
 
   // Derived rather than toggled, so each boundary can report on its own and the
   // piece still starts on the screen the first cue asks for however they fire.
+  // On a phone the stage is the top of the page while the headline is there —
+  // the opening photograph and the headline go up the window together — and
+  // the top of the window itself from then on. The first boundary is where
+  // that changes, and the sheet it raises is what hides the change: going
+  // down, the stage waits for the sheet to finish covering it before it moves,
+  // and coming back up the sheet is still opaque at the moment of the turn, so
+  // the stage can move at once. Off a phone the class changes nothing.
+  let pinTimer;
+  function setPinned(on) {
+    clearTimeout(pinTimer);
+    if (!on) return document.body.classList.remove('past-masthead');
+    pinTimer = setTimeout(() => document.body.classList.add('past-masthead'),
+                          SCREEN_FADE_MS);
+  }
+
   function settleScreen(plate) {
     let screen = cues[0].dataset.screen;
     for (const b of boundaries) if (b.passed) screen = b.screen;
+    setPinned(boundaries.length > 0 && boundaries[0].passed);
     applyScreen(screen, plate);
   }
 
