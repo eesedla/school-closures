@@ -24,12 +24,6 @@
     --loss-mid:  #51a89a;       /* lost 10–20% */
     --loss-low:  #a9d2cf;       /* lost under 10% */
     --growth:    #daeae5;       /* grew */
-    /* What became of the 2010-11 buildings; STATUS in the script matches. */
-    --reuse-reused: var(--slate);
-    --reuse-vacant: var(--red);
-    --reuse-park:   #d0d64c;
-    --reuse-lot:    #e56430;
-    --reuse-school: #fff;
     --card-shadow: 0 20px 50px rgba(0,0,0,.4);
     /* The run of empty rail a full-screen chapter needs on either side of it.
        The turn fires as the copy before the gap leaves the top of the window,
@@ -99,21 +93,6 @@
                            margin-top: .9rem; font-size: 14px; line-height: 1.5;
                            color: var(--gray); }
 
-  /* Two photographs sharing a plate, halving the stage between them, each
-     inside its own half. No gap of its own: the inset on each photograph is
-     what holds them apart, and the plate's white shows between. */
-  .plate--stack { display: grid; grid-template-rows: 1fr 1fr; }
-  .plate--stack img { height: 100%; min-height: 0; }
-  /* A stacked pair with the caption between the two pictures rather than under
-     them. The caption is the figure's last child, which is where the markup has
-     to put it, and the middle row is where it belongs; each picture takes a
-     little over a third of the window so the three fit the stage together. */
-  .plate--stack.plate--cap { grid-template-rows: auto auto auto; row-gap: .9rem; }
-  .plate--stack.plate--cap img { max-height: 34vh; }
-  .plate--stack.plate--cap img:first-of-type { grid-row: 1; }
-  .plate--stack.plate--cap figcaption { grid-row: 2; margin-top: 0; }
-  .plate--stack.plate--cap img:last-of-type  { grid-row: 3; }
-
   /* While the veil is down the stage cuts rather than crossfades. A plate still
      fading when the veil lifts would be the chapter before showing through the
      one the reader has arrived at. */
@@ -133,11 +112,6 @@
   body.closures-on     .closure-box--old,
   body.closures-new-on .closure-box--new { opacity: 1; transform: none;
                                            transition-delay: calc(var(--i) * 70ms); }
-  /* Where the piece turns to what became of the buildings, each square takes
-     the colour of its own fate. It rides on the marker as a custom property,
-     set when the marker is placed, so a square and the key cannot drift. */
-  body.closures-status .closure-box--old { background: var(--status); }
-
   /* Legend. Tied to the map being the visible plate as well as to the squares,
      so it cannot strand itself on top of a photograph: the narrative sections
      leave the squares switched on underneath their plates. */
@@ -155,27 +129,21 @@
   .swatch--mid  { background: var(--loss-mid); }
   .swatch--low  { background: var(--loss-low); }
   .swatch--grew { background: var(--growth); }
-  .swatch--reused { background: var(--reuse-reused); }
-  .swatch--vacant { background: var(--reuse-vacant); }
-  .swatch--park   { background: var(--reuse-park); }
-  .swatch--lot    { background: var(--reuse-lot); }
-  .swatch--school { background: var(--reuse-school); }
   .legend-row--new .legend-swatch { background: var(--red); }
   /* The second entry waits for the squares it describes. */
   .legend-row--new { opacity: 0; transition: opacity .5s ease; }
   body.closures-new-on .legend-row--new { opacity: 1; }
-  /* The key follows the squares: the two waves, or what became of them. */
-  .legend-status { display: none; }
-  body.closures-status .legend-status { display: block; }
-  body.closures-status .legend-row--old,
-  body.closures-status .legend-row--new { display: none; }
 
   /* The title the choropleth is read by. It belongs to the map, so it rides
      inside .stage and takes the window along with it; top left, against the
-     legend's bottom left. */
+     legend's bottom left. Tied to the map being what the stage is showing as
+     well as to the tracts, like the legend below it: a photograph takes the
+     stage at the chapter turn, a screen or more before the cue that switches
+     the tracts off, and the title cannot be left lying over it in between. */
   .map-title { position: absolute; left: 2vh; top: 2vh; z-index: 7;
                opacity: 0; transition: opacity .5s ease; pointer-events: none; }
-  body.tracts-on .map-title { opacity: 1; }
+  body.on-map.tracts-on .map-title,
+  body.on-fullmap.tracts-on .map-title { opacity: 1; }
   /* The two decades sit in the same grid cell so one can cross into the other
      on the map's own clock, without the key under them moving. */
   .map-title-heads { display: grid; margin: 0 0 .8rem; }
@@ -210,6 +178,12 @@
   .entry-meta .author a { color: var(--teal); font-weight: 600;
                           text-decoration: none; }
   .entry-meta .author a:hover { text-decoration: underline; }
+  /* The credits that follow the byline: the same grey line, set under it rather
+     than beside it, and indented to the byline's own left edge so the avatar
+     does not leave them hanging. */
+  .entry-credits { margin: .6rem 0 0 calc(44px + .75rem);
+                   font-size: 14px; line-height: 1.5; color: var(--gray); }
+  .entry-credits p { margin: 0; }
 
   /* The copy in the two tracks reads as an ordinary story: paragraphs set at a
      normal article gap and the reader is carried by the sentences, not by a
@@ -289,15 +263,28 @@
      half of the window whether the second has arrived yet or not, and the one
      that comes alone spans both. The row is the only one, centred in the
      window, and every figure is centred in its cell. */
+  /* The pair hangs from the top of the row rather than being centred in it: the
+     two figures are rarely the same height, since a caption of three lines is
+     taller than one of a single line, and centring each in its own half would
+     set the pictures at different heights on the screen. From the top, the two
+     pictures line up and so do the captions under them. */
   .screen--shots { display: grid; grid-template-columns: 1fr 1fr;
-                   align-content: center; justify-items: center; align-items: center; }
+                   align-content: center; justify-items: center; align-items: start; }
   /* Each drifts in from its own side as it fades, so which of the two came
      first is something the reader sees rather than has to notice. */
   .shot { grid-row: 1; margin: 0;
           opacity: 0; transition: opacity .9s ease, transform .9s ease; }
   .shot--left  { grid-column: 1; transform: translateX(-3vw); }
   .shot--right { grid-column: 2; transform: translateX(3vw); }
-  .shot--solo  { grid-column: 1 / 3; }
+  /* The one that comes alone is lifted out of the row altogether. It is never
+     on the screen at the same time as a pair, but left in the row it would be
+     the tallest thing in it even while invisible, and the pair would hang from
+     the top of a row sized for a picture that is not there. Both axes are set
+     back to auto so the window, rather than that row, is what it is centred
+     in. */
+  .shot--solo  { position: absolute; inset: 0; grid-row: auto; grid-column: auto;
+                 display: grid; place-content: center;
+                 transform: translateY(5vh); }   /* and this one rises from below */
   .shot.is-visible { opacity: 1; transform: none; }
   /* Sized by height, which keeps the three of them the same size on the screen
      whatever shape they were taken in, and leaves the figure as wide as the
@@ -310,8 +297,10 @@
      was told to take stays put. With width and height both free, the picture
      takes whichever of the two bounds it meets first and keeps its shape. */
   .shot img { display: block; width: auto; height: auto;
-              max-height: 56vh; max-width: 38vw; }
-  .shot--solo img { max-width: 56vw; }
+              max-height: 66vh; max-width: 38vw; }
+  /* The one that comes alone has the window to itself, so it is given more of
+     it than either half of a pair can take. */
+  .shot--solo img { max-height: 72vh; max-width: 62vw; }
   /* The caption takes the measure of the picture above it. Zero wide so that
      its own longest line has no say in how wide the figure is — the picture
      decides that — and then the full width of whatever the figure turns out
@@ -335,6 +324,13 @@
      The last one is taller: its own height is the white the sheet holds after
      the last photograph has gone, before it lifts on the map. */
   .hold { height: 10vh; margin-top: 110vh; }
+  /* The first beat of a sequence comes in on a shorter gap than --screen-gap,
+     which is what a cue after a chapter turn otherwise takes: the white the
+     sheet arrives on is the beat before it, and a screen and a half of blank
+     rail on top of that leaves the reader scrolling through nothing. This is
+     a little under a window, so the first picture is the next thing to happen
+     once the sheet has gone white. */
+  .cue.hold--first { margin-top: 90vh; }
   .hold--last { height: 60vh; }
 
   /* ---- the full-screen map chapter ----
@@ -409,7 +405,8 @@
   @media (prefers-reduced-motion: reduce) {
     .closure-box, .plate,
     .montage, .screen, .shot, .veil, .map-title-head { transition: none; }   /* hard-cut, no crossfade */
-    .shot--left, .shot--right { transform: none; }   /* fade in place, no drift */
+    .shot--left, .shot--right,
+    .shot--solo { transform: none; }   /* fade in place, no drift and no rise */
     body.closures-on .closure-box { transition-delay: 0ms; }
   }
 </style>
@@ -442,10 +439,8 @@
         <figcaption>Harris McMichael and his wife Kisha Clark-McMichael walk toward the Robert Fulton Elementary School building across from their home.</figcaption>
       </figure>
 
-      <figure class="plate plate--stack plate--cap" id="plate-east">
+      <figure class="plate plate--cap" id="plate-east">
         <img src="https://signalcleveland.org/wp-content/uploads/2026/10/Cleveland-Closed-Schools-East-High-School-3-scaled.jpg"
-             alt="" width="2560" height="1707" loading="lazy" decoding="async">
-        <img src="https://signalcleveland.org/wp-content/uploads/2026/10/Cleveland-Closed-Schools-East-High-School-2-scaled.jpg"
              alt="" width="2560" height="1707" loading="lazy" decoding="async">
         <figcaption>Doreen Bickerstaff flips through the yearbook from her senior year, 1978, at East High School on the dining table at her mother’s house across from the school in Cleveland on Wednesday, Oct. 15, 2026.</figcaption>
       </figure>
@@ -477,13 +472,6 @@
       <div class="legend" id="legend" aria-hidden="true">
         <p class="legend-row legend-row--old"><span class="legend-swatch"></span>Closed 2010–11</p>
         <p class="legend-row legend-row--new"><span class="legend-swatch"></span>Closed 2026</p>
-        <div class="legend-status">
-          <p class="legend-row"><span class="legend-swatch swatch--reused"></span>Reused</p>
-          <p class="legend-row"><span class="legend-swatch swatch--school"></span>New school</p>
-          <p class="legend-row"><span class="legend-swatch swatch--park"></span>Park</p>
-          <p class="legend-row"><span class="legend-swatch swatch--lot"></span>Empty lot</p>
-          <p class="legend-row"><span class="legend-swatch swatch--vacant"></span>Vacant</p>
-        </div>
       </div>
 
       <div class="map-title" aria-hidden="true">
@@ -501,7 +489,7 @@
 
   <!-- RIGHT TRACK: the copy. Every .cue declares the state it wants, so scrolling
        back up reverses for free: data-view = city | collinwood | northeast |
-       eastside, data-squares = off | on | both | status, data-tracts = off |
+       eastside, data-squares = off | on | both, data-tracts = off |
        2000s | 2010s, data-plate = map | one of the photographs, and
        data-screen = track | open | montage | fullmap, and on the opening
        sheet data-shot = none | left | pair | solo. -->
@@ -515,6 +503,10 @@
           src="https://signalcleveland.org/wp-content/uploads/2025/10/cropped-HeadShot-Street-Sense-Franzi-rotated-1-80x80.jpeg"
           srcset="https://signalcleveland.org/wp-content/uploads/2025/10/cropped-HeadShot-Street-Sense-Franzi-rotated-1-160x160.jpeg 2x"></span>
         <span class="byline"><span>by</span> <span class="author vcard"><a class="url fn n" href="https://signalcleveland.org/author/fwild/">Franziska Wild</a></span></span>
+      </div>
+      <div class="entry-credits">
+        <p>Photos by Michael Indriolo/Signal Cleveland and Catchlight Local</p>
+        <p>Design and layout by Emma Sedlak</p>
       </div>
     </header>
 
@@ -537,8 +529,6 @@
     <div class="cue hold" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="left" aria-hidden="true"></div>
 
     <div class="cue hold" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="pair" aria-hidden="true"></div>
-
-    <div class="cue hold" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="none" aria-hidden="true"></div>
 
     <div class="cue hold" data-view="city" data-squares="off" data-tracts="off" data-screen="open" data-plate="opener" data-shot="solo" aria-hidden="true"></div>
 
@@ -639,9 +629,9 @@
     <!-- The squares turn from when the buildings closed to what became of them.
          Nothing else moves: the camera, the tracts and the copy column all hold,
          so the change is the only thing on the page that does. -->
-    <p class="cue card coda" data-view="eastside" data-squares="status" data-screen="fullmap" data-plate="map" data-tracts="2010s">In both the present and past round of closures, the district and city have hoped to reuse closed schools to benefit the communities around them. In some cases they’ve had success: Henry Longfellow, a stately red brick elementary school, is now senior housing, and the beige-bricked Margaret Ireland hosts the headquarters for a local job training organization.</p>
+    <p class="cue card coda" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2010s">In both the present and past round of closures, the district and city have hoped to reuse closed schools to benefit the communities around them. In some cases they’ve had success: Henry Longfellow, a stately red brick elementary school, is now senior housing, and the beige-bricked Margaret Ireland hosts the headquarters for a local job training organization.</p>
 
-    <p class="cue card card--last" data-view="eastside" data-squares="status" data-screen="fullmap" data-plate="map" data-tracts="2010s">In 2011 and 2010, reuse — while costly and difficult — didn’t always stem population losses, our analysis found. Neither did demolition. Take South High School and East High School. Both schools have new, public uses, one as a police training center and the other as a district administrative building. But the census tracts containing the schools have lost about half their residents since the once-beloved high schools closed.</p>
+    <p class="cue card card--last" data-view="eastside" data-squares="on" data-screen="fullmap" data-plate="map" data-tracts="2010s">In 2011 and 2010, reuse — while costly and difficult — didn’t always stem population losses, our analysis found. Neither did demolition. Take South High School and East High School. Both schools have new, public uses, one as a police training center and the other as a district administrative building. But the census tracts containing the schools have lost about half their residents since the once-beloved high schools closed.</p>
 
     <!-- Out of the map and back onto the two tracks: Bickerstaff and her
          yearbook on the stage, the pages she is looking at set into the copy
@@ -705,19 +695,16 @@
       <figcaption>Washington shows a mailer sent to her a few years ago detailing plans to redevelop the vacant school building. The plan fell through when the developers failed to secure enough funding.</figcaption>
     </figure>
 
-    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off">After years of not seeing construction, Washington has settled back into a place of discontented acceptance.</p>
+    <p class="cue para" data-view="eastside" data-squares="off" data-screen="track" data-plate="washington" data-tracts="off" data-shot="none">After years of not seeing construction, Washington has settled back into a place of discontented acceptance.</p>
 
     <!-- The closing sheet, read the same way as the opening one: a beat to a
          cue, the gap above each is how long the beat before it lasts, and the
          stage is handed to Martin's portrait under it so the last chapter's
          two tracks are there the moment it lifts. -->
-    <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="none" aria-hidden="true"></div>
 
-    <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="close-left" aria-hidden="true"></div>
+    <div class="cue hold hold--first" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="close-left" aria-hidden="true"></div>
 
     <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="close-pair" aria-hidden="true"></div>
-
-    <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="none" aria-hidden="true"></div>
 
     <div class="cue hold" data-view="eastside" data-squares="off" data-tracts="off" data-screen="close" data-plate="martin" data-shot="close-solo" aria-hidden="true"></div>
 
@@ -1622,28 +1609,28 @@
   // about 7 m of the building centre the piece opens on, close enough to hold
   // at the zoom the closing chapter reaches.
   const CLOSURES = [
-    [-81.6324198,41.5182495,'reused'],
-    [-81.634765,41.456231,'reused'],
-    [-81.6236685,41.532365,'vacant'],
-    [-81.6090924,41.4753369,'vacant'],
-    [-81.6281398,41.5127947,'park'],
-    [-81.5840709,41.4700318,'vacant'],
-    [-81.6077897,41.5449899,'park'],
-    [-81.5861486,41.5632805,'reused'],
-    [-81.648086,41.4546542,'empty lot'],
-    [-81.6004275,41.4885762,'new school'],
-    [-81.6183312,41.5236852,'new school'],
-    [-81.6092291,41.5355526,'empty lot'],
-    [-81.5673649,41.4532209,'empty lot'],
-    [-81.6484705,41.5133759,'empty lot'],
-    [-81.7699155,41.4480632,'new school'],
-    [-81.6222015,41.4628979,'new school'],
-    [-81.5961371,41.5364803,'new school'],
-    [-81.6297113,41.5081689,'empty lot'],
-    [-81.6421639,41.463543,'empty lot'],
-    [-81.640068,41.4975089,'empty lot'],
-    [-81.5550093,41.4303738,'empty lot'],
-    [-81.6478978,41.5072473,'new school']
+    [-81.6324198,41.5182495],
+    [-81.634765,41.456231],
+    [-81.6236685,41.532365],
+    [-81.6090924,41.4753369],
+    [-81.6281398,41.5127947],
+    [-81.5840709,41.4700318],
+    [-81.6077897,41.5449899],
+    [-81.5861486,41.5632805],
+    [-81.648086,41.4546542],
+    [-81.6004275,41.4885762],
+    [-81.6183312,41.5236852],
+    [-81.6092291,41.5355526],
+    [-81.5673649,41.4532209],
+    [-81.6484705,41.5133759],
+    [-81.7699155,41.4480632],
+    [-81.6222015,41.4628979],
+    [-81.5961371,41.5364803],
+    [-81.6297113,41.5081689],
+    [-81.6421639,41.463543],
+    [-81.640068,41.4975089],
+    [-81.5550093,41.4303738],
+    [-81.6478978,41.5072473]
   ];
 
   // Satellite imagery: Esri World Imagery — real tiles through z19 here (USGS caps at z16).
@@ -1706,14 +1693,20 @@
         geometry: { type: 'Polygon', coordinates: [ring] }
       }))
     }});
-    // The colour is a paint property like any other, so moving the map from one
-    // decade to the next crossfades on the same clock the fill came up on.
-    map.addLayer({ id: 'tracts-fill', type: 'fill', source: 'tracts',
-                   paint: { 'fill-color': bandColour('band00'),
-                            'fill-color-transition': { duration: MASK_FADE_MS },
-                            'fill-opacity': 0,
-                            'fill-opacity-transition': { duration: MASK_FADE_MS } } },
-                 'mask-city');
+    // One fill per decade, both of the same tracts, crossfading on their own
+    // opacity. The colour cannot do the fading itself: the band it reads is a
+    // property of the feature, and a paint property driven by the data is set
+    // outright rather than transitioned, so recolouring a single layer would
+    // snap the city from one decade to the other. Opacity is a constant and
+    // does transition, which is what brought the fill up in the first place.
+    const addTractFill = (id, band) =>
+      map.addLayer({ id, type: 'fill', source: 'tracts',
+                     paint: { 'fill-color': bandColour(band),
+                              'fill-opacity': 0,
+                              'fill-opacity-transition': { duration: MASK_FADE_MS } } },
+                   'mask-city');
+    addTractFill('tracts-fill', 'band00');
+    addTractFill('tracts-fill-2010s', 'band10');
 
     // A card may have fired before the style finished loading, so settle up now.
     layersReady = true;
@@ -1733,22 +1726,12 @@
     [-81.6524,41.493664],   [-81.686779,41.478717], [-81.574155,41.553481]
   ];
 
-  // What became of each 2010-11 building, matching --reuse-* in the stylesheet.
-  const STATUS = {
-    'reused':     '#404f54',
-    'new school': '#ffffff',
-    'park':       '#d0d64c',
-    'empty lot':  '#e56430',
-    'vacant':     '#d64d4d'
-  };
-
   // Markers go in once and stay; CSS decides whether they are visible.
   function addClosureMarkers(list, variant) {
-    list.forEach(([lng, lat, status], i) => {
+    list.forEach(([lng, lat], i) => {
       const el = document.createElement('div');
       el.className = 'closure';
       el.style.setProperty('--i', i);                // drives the stagger in CSS
-      if (status) el.style.setProperty('--status', STATUS[status]);
       el.appendChild(Object.assign(document.createElement('span'),
         { className: 'closure-box closure-box--' + variant }));
       new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
@@ -1921,14 +1904,12 @@
     clip.load();
   }
 
-  // off = none, on = the 2010-11 wave, both = that wave plus this year's,
-  // status = that wave again, each square coloured by what became of it.
+  // off = none, on = the 2010-11 wave, both = that wave plus this year's.
   function applySquares(name) {
     if (name === curSquares) return;
     curSquares = name;
     document.body.classList.toggle('closures-on', name !== 'off');
     document.body.classList.toggle('closures-new-on', name === 'both');
-    document.body.classList.toggle('closures-status', name === 'status');
   }
 
   // -1, the tract with no population to take a percentage of, falls through to
@@ -1938,11 +1919,13 @@
             'rgba(0,0,0,0)'];
   }
 
+  // Which of the two decades is up is the whole of the change, so moving
+  // between them is one fill fading out under the other fading in.
   function paintTracts(name) {
-    const on = name !== 'off';
-    map.setPaintProperty('tracts-fill', 'fill-color',
-                         bandColour(name === '2010s' ? 'band10' : 'band00'));
-    map.setPaintProperty('tracts-fill', 'fill-opacity', on ? TRACT_FILL : 0);
+    map.setPaintProperty('tracts-fill',       'fill-opacity',
+                         name === '2000s' ? TRACT_FILL : 0);
+    map.setPaintProperty('tracts-fill-2010s', 'fill-opacity',
+                         name === '2010s' ? TRACT_FILL : 0);
   }
 
   // off, or the decade the fill is showing. The title rides on these classes.
